@@ -7,6 +7,8 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
+        String id = IdGen.idGen();
+        System.out.println(id);
         Scanner scanner = new Scanner(System.in);
         System.out.println("_____NOTE_____");
         System.out.println("Insert title:");
