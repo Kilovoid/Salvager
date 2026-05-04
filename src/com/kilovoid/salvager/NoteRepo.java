@@ -30,6 +30,10 @@ public class NoteRepo {
         return repoPath.resolve(id + ".txt");
     }
 
+    public void deleteNote(String id) throws IOException {
+        Files.delete(repoPath.resolve(id + ".txt"));
+    }
+
     private void writeToFile(Note note) throws  IOException {
         Path file = repoPath.resolve(note.getId()+".txt");
         String content = note.getTitle() + "\n\n" + note.getContent();
@@ -50,5 +54,4 @@ public class NoteRepo {
         }
         writeToFile(note);
     }
-
 }

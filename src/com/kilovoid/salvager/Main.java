@@ -7,8 +7,6 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        String id = IdGen.idGen();
-        System.out.println(id);
         Scanner scanner = new Scanner(System.in);
         System.out.println("_____NOTE_____");
         System.out.println("Insert title:");
@@ -25,28 +23,17 @@ public class Main {
         }
         String bodyText = bodyTextBuilder.toString();
 
-        Note note = new Note(title, bodyText, id);
+        Note note = new Note(title, bodyText, null);
 
-        String dirPath = "notes";
+        NoteRepo repo = new NoteRepo("E:\\Java Projects\\Salvager");
         try {
-            Files.createDirectories(Path.of(dirPath));
-            note.saveToFile(dirPath);
-            System.out.println("Note saved in " + dirPath);
+            repo.saveNote(note);
+            System.out.println("Note saved in " + repo);
         } catch (IOException e) {
             System.out.println("Error saving!" + e.getMessage());
             return;
         }
-
-        String fileName = note.getTitle().replaceAll("\\s", "_") + ".txt";
-        try {
-            Note loaded = Note.loadFromFile(dirPath + "/" + fileName);
-            System.out.println("Loaded Note:");
-            System.out.println(loaded.getTitle());
-            System.out.println("\n");
-            System.out.println(loaded.getContent());
-        } catch (IOException e) {
-            System.out.println("Loading error!" + e.getMessage());
-        }
+        System.out.println(note.getId());
         scanner.close();
     }
 }
