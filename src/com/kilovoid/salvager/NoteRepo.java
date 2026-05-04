@@ -25,4 +25,30 @@ public class NoteRepo {
     public Path getRepoPath() {
         return repoPath;
     }
+
+    private Path pathOf(String id) {
+        return repoPath.resolve(id + ".txt");
+    }
+
+    private void writeToFile(Note note) throws  IOException {
+        Path file = repoPath.resolve(note.getId()+".txt");
+        String content = note.getTitle() + "\n\n" + note.getContent();
+        Files.writeString(file, content);
+    }
+
+    public void saveNote(Note note) throws IOException {
+        if (note.getId() == null) {
+            while (true) {
+                String noteId = IdGen.idGen();
+                if (!(Files.exists(pathOf(noteId)))) {
+                    note.setId(noteId);
+                    break;
+                }
+            }
+        } else if (!(Files.exists(pathOf(note.getId())))) {
+            throw new RuntimeException("Note " + note.getId() + " does not exist");
+        }
+        writeToFile(note);
+    }
+
 }

@@ -25,7 +25,7 @@ public class Main {
         }
         String bodyText = bodyTextBuilder.toString();
 
-        Note note = new Note(title, bodyText);
+        Note note = new Note(title, bodyText, id);
 
         String dirPath = "notes";
         try {

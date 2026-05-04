@@ -10,11 +10,13 @@ import java.nio.file.Path;
 public class Note {
     private String title;
     private String content;
+    private String id;
 
     //Constructor
-    public Note(String title, String content) {
+    public Note(String title, String content, String id) {
         this.title = title;
         this.content = content;
+        this.id = id;
     }
 
     public String getTitle() {
@@ -23,24 +25,7 @@ public class Note {
     public String getContent() {
         return content;
     }
+    public String getId() { return id; }
 
-    public void saveToFile(String dirPath) throws IOException {
-        String fileName = title.replaceAll("\\s+", "_") + ".txt";
-        Path path = Path.of(dirPath, fileName);
-        String fileContent = title + "\n\n" + content;
-        Files.writeString(path, fileContent);
-    }
-
-    public static Note loadFromFile(String filePath) throws IOException {
-        Path path = Path.of(filePath);
-        String content = Files.readString(path);
-        String[] lines = content.split("\n",3);
-        if (lines.length < 2) {
-            throw new IOException("Invalid file format");
-        }
-        String title = lines[0].trim();
-        String body = lines.length > 2 ? lines[2] : "";
-
-        return new Note(title, body);
-    }
+    public void setId(String id) { this.id = id; }
 }
