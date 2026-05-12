@@ -54,4 +54,17 @@ public class NoteRepo {
         }
         writeToFile(note);
     }
+    public Note findById(String id) throws IOException {
+        Path filePath = pathOf(id);
+        if (filePath != null) {
+            String fullContent = Files.readString(filePath);
+            String[] parts = fullContent.split("\n",3);
+            String title = parts[0].trim();
+            String content = parts.length > 2 ? parts[2] : "";
+            System.out.println("DEBUG: NOTE FOUND");
+            return new Note(title, content,id);
+        } else {
+            return null;
+        }
+    }
 }

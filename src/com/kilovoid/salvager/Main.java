@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("_____NOTE_____");
         System.out.println("Insert title:");
@@ -25,7 +25,7 @@ public class Main {
 
         Note note = new Note(title, bodyText, null);
 
-        NoteRepo repo = new NoteRepo("E:\\Java Projects\\Salvager");
+        NoteRepo repo = new NoteRepo("D:\\Java Projects\\Salvager");
         try {
             repo.saveNote(note);
             System.out.println("Note saved in " + repo);
@@ -34,6 +34,8 @@ public class Main {
             return;
         }
         System.out.println(note.getId());
+
+        repo.findById("dmbtgtqlxq");
         scanner.close();
     }
 }
