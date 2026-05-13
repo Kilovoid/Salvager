@@ -1,8 +1,8 @@
 package com.kilovoid.salvager;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -36,6 +36,8 @@ public class Main {
         System.out.println(note.getId());
 
         repo.findById("dmbtgtqlxq");
+        List<Path> listOfAllFiles = repo.getAllFiles();
+        System.out.println(listOfAllFiles);
         scanner.close();
     }
 }

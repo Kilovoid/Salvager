@@ -8,6 +8,10 @@ package com.kilovoid.salvager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.rmi.ServerError;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class NoteRepo {
     private final Path repoPath;
@@ -56,15 +60,23 @@ public class NoteRepo {
     }
     public Note findById(String id) throws IOException {
         Path filePath = pathOf(id);
-        if (filePath != null) {
-            String fullContent = Files.readString(filePath);
-            String[] parts = fullContent.split("\n",3);
-            String title = parts[0].trim();
-            String content = parts.length > 2 ? parts[2] : "";
-            System.out.println("DEBUG: NOTE FOUND");
-            return new Note(title, content,id);
-        } else {
-            return null;
+        if (!Files.exists(filePath)) {
+            throw new IOException("No file with such id in repo!");
         }
+        String fullContent = Files.readString(filePath);
+        String[] parts = fullContent.split("\n",3);
+        String title = parts[0].trim();
+        String content = parts.length > 2 ? parts[2] : "";
+        System.out.println("DEBUG: NOTE FOUND");
+        return new Note(title, content,id);
+    }
+    public List<Path> getAllFiles() throws IOException {
+        try (Stream<Path> stream = Files.walk(repoPath)) {
+            return stream.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".txt"))
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            System.err.println("ERROR SCANNING FILES" + e);;
+        }
+        return List.of();
     }
 }
