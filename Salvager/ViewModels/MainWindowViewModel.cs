@@ -7,12 +7,14 @@ using System.Reflection;
 using System.Text;
 using CommunityToolkit.Mvvm.Input;
 using System.Xml.Serialization;
+using Salvager.Services;
 
 
 namespace Salvager.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
+        private readonly INoteService _noteService;
         public ObservableCollection<Note> Notes { get; set; } = new();
 
         [ObservableProperty]
@@ -21,12 +23,10 @@ namespace Salvager.ViewModels
         [ObservableProperty]
         private EditorViewModel _selectedNoteViewModel;
 
-        public MainWindowViewModel()
+        public MainWindowViewModel(INoteService noteService)
         {
-            var testNote = new Note { Title = "Hello", Content = "Waow" };
-            Notes.Add(testNote);
-            SelectedNote = testNote;
-            SelectedNoteViewModel = new EditorViewModel(testNote);
+            _noteService = noteService;
+            LoadNotesFromDisk();
         }
         [RelayCommand]
         private void CreateNewPage()

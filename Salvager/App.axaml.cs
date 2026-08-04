@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Salvager.ViewModels;
 using Salvager.Views;
+using Salvager.Services;
 
 namespace Salvager;
 
@@ -18,6 +19,7 @@ public partial class App : Application
     {
         var services = new ServiceCollection();
         services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<INoteService, NoteService>();
         var provider = services.BuildServiceProvider();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
