@@ -1,14 +1,19 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Salvager.Models
 {
-    public class Note
+    public partial class Note : ObservableObject
     {
-        public string Title { get; set; } = "New Note";
-        public string Content { get; set; } = "";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        [ObservableProperty]
+        private string _title = "New Note";
+        [ObservableProperty]
+        public string _content = "";
+        [ObservableProperty]
+        public DateTime _createdAt = DateTime.Now;
 
     }
 }
