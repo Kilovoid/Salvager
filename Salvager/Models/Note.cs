@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Salvager.Models
 {
-    public class Page
+    public class Note
     {
         public string Title { get; set; } = "New Note";
         public string Content { get; set; } = "";

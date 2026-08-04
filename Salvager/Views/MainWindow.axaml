@@ -1,21 +1,39 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Salvager.ViewModels"
+        xmlns:views="using:Salvager.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:views="using:Salvager.Views"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Salvager.Views.MainWindow"
-        x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        x:DataType="vm:MainWindowViewModel" 
         Title="Salvager">
-
     <Design.DataContext>
-        <vm:MainViewModel />
+        <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+    <Window.DataTemplates>
+        <DataTemplate DataType="vm:EditorViewModel">
+            <views:EditorView/>
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Grid ColumnDefinitions="250, *">
+        <DockPanel Grid.Column="0">
+            <Button DockPanel.Dock="Top"
+                    Command="{Binding CreateNewPageCommand}"
+                    Margin="5"
+                    HorizontalAlignment="Stretch">
+                Create
+            </Button>
+
+            <ListBox ItemsSource="{Binding Notes}"
+                     DisplayMemberBinding="{Binding Title}"
+                     SelectedItem="{Binding SelectedNote}"
+                     Margin="5" />
+        </DockPanel>
+        <ContentControl Grid.Column="1"
+                        Content="{Binding SelectedNoteViewModel}"/>
+    </Grid>
 
 </Window>

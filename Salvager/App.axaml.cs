@@ -17,14 +17,14 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<MainWindowViewModel>();
         var provider = services.BuildServiceProvider();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var mainVm = provider.GetRequiredService<MainViewModel>();
+            var mainVm = provider.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainViewModel(),
+                DataContext = mainVm
             };
         }
 

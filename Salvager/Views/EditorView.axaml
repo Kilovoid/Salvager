@@ -3,6 +3,19 @@
              xmlns:vm="using:Salvager.ViewModels"
              x:Class="Salvager.Views.EditorView"
              x:DataType="vm:EditorViewModel">
-    
-    
+
+    <DockPanel>
+        <TextBox DockPanel.Dock="Top"
+                 Text="{Binding CurrentPage.Title}"
+                 PlaceholderText="Заголовок заметки"
+                 Margin="5"
+                 FontSize="16" />
+        
+        <TextBox Text="{Binding CurrentPage.Content}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 Margin="5"
+                 FontSize="14" />
+    </DockPanel>
+
 </UserControl>
