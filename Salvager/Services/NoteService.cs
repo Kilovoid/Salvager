@@ -37,7 +37,7 @@ namespace Salvager.Services
         public List<Note> LoadAllNotes()
         {
             var notes = new List<Note>();
-            var files = Directory.GetFiles(_notesDirectory, ".md");
+            var files = Directory.GetFiles(_notesDirectory, "*.md");
             foreach (var file in files)
             {
                 try

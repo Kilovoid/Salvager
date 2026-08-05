@@ -8,6 +8,7 @@ using System.Text;
 using CommunityToolkit.Mvvm.Input;
 using System.Xml.Serialization;
 using Salvager.Services;
+using System.Linq;
 
 
 namespace Salvager.ViewModels
@@ -28,6 +29,32 @@ namespace Salvager.ViewModels
             _noteService = noteService;
             LoadNotesFromDisk();
         }
+
+        private void LoadNotesFromDisk()
+        {
+            var loadedNotes = _noteService.LoadAllNotes();
+            Notes.Clear();
+            foreach (var note in loadedNotes)
+            {
+                Notes.Add(note);
+            }
+            SelectedNote = Notes.First();
+            SelectedNoteViewModel = new EditorViewModel(SelectedNote);
+        }
+
+        [RelayCommand]
+        private void CreateNewNote()
+        {
+            var newNote = new Note{ Title = "Empty note"};
+            CreateNewNote(newNote);
+        }
+        private void CreateNewNote(Note note)
+        {
+            Notes.Add(note);
+            _noteService.SaveNote(note);
+            SelectedNote = note;
+            SelectedNoteViewModel = new EditorViewModel(note);
+        }
         [RelayCommand]
         private void CreateNewPage()
         {
@@ -43,6 +70,10 @@ namespace Salvager.ViewModels
             {
                 SelectedNoteViewModel = new EditorViewModel(value);
             }
+        }
+        public void SaveAllNotes()
+        {
+            _noteService.SaveAll(Notes.ToList());
         }
     }
 }

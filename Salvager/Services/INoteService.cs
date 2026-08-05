@@ -5,12 +5,10 @@ using System.Text;
 
 namespace Salvager.Services
 {
-    internal interface INoteService
+    public interface INoteService
     {
         List<Note> LoadAllNotes();
-
         void SaveNote(Note note);
-
         void DeleteNote(Note note);
         void SaveAll(List<Note> notes);
     }
