@@ -8,77 +8,44 @@ namespace Salvager.Services
 {
     internal class NoteService : INoteService
     {
-        private readonly string _notesDirectory;
-
-        public NoteService()
+        public Note CreateNote(string title)
         {
-            _notesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Notes");
-            if (!Directory.Exists(_notesDirectory))
+            if (string.IsNullOrEmpty(title))
             {
-                Directory.CreateDirectory(_notesDirectory);
+                throw new ArgumentNullException("Title cannot be null", nameof(title));
             }
-        }
-        public void DeleteNote(Note note)
-        {
-            if (note == null) throw new ArgumentNullException(nameof(note));
-            if (string.IsNullOrEmpty(note.Title)) throw new ArgumentException("Title cannot be null!");
-            string fileName = note.Title + ".md";
-            foreach (char c in Path.GetInvalidFileNameChars())
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            foreach (char c in invalidChars)
             {
-                fileName = fileName.Replace(c, '_');
+                title = title.Replace(c, '_');
             }
-            string filePath = Path.Combine(_notesDirectory, fileName);
-            if (File.Exists(filePath))
+            Note newNote = new Note ///Возможные ошибки - пустой заголовок, еще невалидные знаки! | СДЕЛАНО
             {
-                File.Delete(filePath);
-            }
+                Title = title,
+                Content = ""
+            };
+            return newNote;
         }
 
-        public List<Note> LoadAllNotes()
+        public void DeleteNote(Guid noteId)
         {
-            var notes = new List<Note>();
-            var files = Directory.GetFiles(_notesDirectory, "*.md");
-            foreach (var file in files)
-            {
-                try
-                {
-                    string content = File.ReadAllText(file);
-                    string title = Path.GetFileNameWithoutExtension(file);
-                    var note = new Note
-                    {
-                        Title = title,
-                        Content = content,
-                        CreatedAt = File.GetCreationTime(file)
-                    };
-                    notes.Add(note);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error loading file {file} : {ex.Message}");
-                }
-            }
-            return notes;
+            ///Здесь тоже нужно проверять Guid. Что такое Guid по сути - в Java не было такого типа
+
         }
 
-        public void SaveAll(List<Note> notes)
+        public List<Note> LoadAll()
         {
-            foreach (var note in notes)
-            {
-                SaveNote(note);
-            }
+            throw new NotImplementedException();
         }
 
-        public void SaveNote(Note note)
+        public Note LoadNote()
         {
-            if (note == null) throw new ArgumentNullException(nameof(note));
-            if (string.IsNullOrEmpty(note.Title)) throw new ArgumentException("Title can't be null");
-            string fileName = note.Title + ".md";
-            foreach (char c in Path.GetInvalidFileNameChars())
-            {
-                fileName = fileName.Replace(c, '_');
-            }
-            string filePath = Path.Combine(_notesDirectory, fileName);
-            File.WriteAllText(filePath, note.Content);
+            throw new NotImplementedException();
+        }
+
+        public void SaveNote()
+        {
+
         }
     }
 }

@@ -25,4 +25,12 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="E:\SalvagerProject\Salvager\Salvager\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="E:\SalvagerProject\Salvager\Salvager\.editorconfig" />
+  </ItemGroup>
 </Project>
