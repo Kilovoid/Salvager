@@ -15,5 +15,10 @@ namespace Salvager.Models
         [ObservableProperty]
         public DateTime _createdAt = DateTime.Now;
 
+        public Note(string title, string content)
+        {
+            _title = title;
+            _content = content;
+        }
     }
 }

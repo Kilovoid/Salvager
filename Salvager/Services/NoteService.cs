@@ -52,7 +52,15 @@ namespace Salvager.Services
 
         public List<Note> LoadAll()
         {
-            throw new NotImplementedException();
+            List<Note> notesToLoad = new List<Note>();
+            string[] mdFiles = Directory.GetFiles(_notesDirectory, "*.md");
+            foreach (string mdFile in mdFiles)
+            {
+                string content = File.ReadAllText(mdFile);
+                string fileName = Path.GetFileNameWithoutExtension(mdFile);
+                Note loaded = new Note(fileName, content); //Пока что fileName, потом буду парсить title
+                notesToLoad.Add(loaded);
+            }
         }
 
         public Note LoadNote()
