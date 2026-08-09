@@ -8,6 +8,14 @@ namespace Salvager.Services
 {
     internal class NoteService : INoteService
     {
+        private readonly string _notesDirectory;
+
+        public NoteService()
+        {
+            _notesDirectory = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory, "Data", "Notes"
+                );
+        }
         public Note CreateNote(string title)
         {
             if (string.IsNullOrEmpty(title))
@@ -29,8 +37,17 @@ namespace Salvager.Services
 
         public void DeleteNote(Guid noteId)
         {
-            ///Здесь тоже нужно проверять Guid. Что такое Guid по сути - в Java не было такого типа
-
+            if (string.IsNullOrEmpty(noteId.ToString()))
+            {
+                throw new ArgumentNullException($"Id ({noteId}) cannot be null!");
+            }
+            string fileName = (noteId + ".md");
+            string filePath = Path.Combine(_notesDirectory, fileName);
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"File {filePath} is not found!");
+            }
+            File.Delete(filePath);
         }
 
         public List<Note> LoadAll()
