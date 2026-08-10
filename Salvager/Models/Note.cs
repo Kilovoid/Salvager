@@ -7,7 +7,8 @@ namespace Salvager.Models
 {
     public partial class Note : ObservableObject
     {
-
+        [ObservableProperty]
+        private Guid _id;
         [ObservableProperty]
         private string _title = "New Note";
         [ObservableProperty]
@@ -19,6 +20,15 @@ namespace Salvager.Models
         {
             _title = title;
             _content = content;
+            _id = Guid.Empty;
+        }
+
+        public Note(Guid id, string title, string content, DateTime createdAt)
+        {
+            _id = id;
+            _title = title;
+            _content = content;
+            _createdAt = createdAt;
         }
     }
 }

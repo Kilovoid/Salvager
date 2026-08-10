@@ -28,11 +28,7 @@ namespace Salvager.Services
             {
                 title = title.Replace(c, '_');
             }
-            Note newNote = new Note ///Возможные ошибки - пустой заголовок, еще невалидные знаки! | СДЕЛАНО
-            {
-                Title = title,
-                Content = ""
-            };
+            Note newNote = new Note(title, "");
             return newNote;
         }
 
@@ -72,14 +68,27 @@ namespace Salvager.Services
             return notesToLoad;
         }
 
-        public Note LoadNote()
+        public Note LoadNote(Guid noteId)
         {
-            throw new NotImplementedException();
+            
         }
-
-        public void SaveNote()
+        public void SaveNote(Note currentNote)
         {
+            if (currentNote == null)
+            {
+                throw new ArgumentNullException(nameof(currentNote));
+            }
+            if (currentNote.Id == Guid.Empty)
+            {
+                currentNote.Id = Guid.NewGuid();
+            }
+            string title = currentNote.Title;
+            string content = currentNote.Content;
+            string noteContents = $"{title}\n{content}";
 
+            string fileName = $"{currentNote}.md";
+            string filePath = Path.Combine(_notesDirectory, fileName);
+            File.WriteAllText(filePath, noteContents, Encoding.UTF8);
         }
     }
 }
