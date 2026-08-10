@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Salvager.Services
@@ -53,14 +54,22 @@ namespace Salvager.Services
         public List<Note> LoadAll()
         {
             List<Note> notesToLoad = new List<Note>();
+            if (!Directory.Exists(_notesDirectory))
+            {
+                Directory.CreateDirectory(_notesDirectory);
+                return new List<Note>();
+            }
+
             string[] mdFiles = Directory.GetFiles(_notesDirectory, "*.md");
             foreach (string mdFile in mdFiles)
             {
-                string content = File.ReadAllText(mdFile);
-                string fileName = Path.GetFileNameWithoutExtension(mdFile);
-                Note loaded = new Note(fileName, content); //Пока что fileName, потом буду парсить title
-                notesToLoad.Add(loaded);
+                using var reader = new StreamReader(mdFile);
+                string title = reader.ReadLine() ?? "Untitled";
+                string content = reader.ReadToEnd();
+                Note loadedNote = new Note(title, content);
+                notesToLoad.Add(loadedNote);
             }
+            return notesToLoad;
         }
 
         public Note LoadNote()
