@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Tmds.DBus.Protocol;
 
 namespace Salvager.Services
 {
@@ -70,7 +71,14 @@ namespace Salvager.Services
 
         public Note LoadNote(Guid noteId)
         {
-            
+            string fileName = noteId + ".md";
+            string[] matchingFiles = Directory.GetFiles(_notesDirectory, fileName);
+            string filePath = matchingFiles[0];
+            using var reader = new StreamReader(filePath);
+            string title = reader.ReadLine() ?? "Untitled";
+            string content = reader.ReadToEnd();
+            Note loadedNote = new Note(title, content);
+            return loadedNote;
         }
         public void SaveNote(Note currentNote)
         {
