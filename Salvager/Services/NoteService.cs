@@ -73,6 +73,10 @@ namespace Salvager.Services
         {
             string fileName = noteId + ".md";
             string[] matchingFiles = Directory.GetFiles(_notesDirectory, fileName);
+            if (matchingFiles.Length == 0)
+            {
+                throw new FileNotFoundException($"Note with id {noteId} is not found in {_notesDirectory}");
+            }
             string filePath = matchingFiles[0];
             using var reader = new StreamReader(filePath);
             string title = reader.ReadLine() ?? "Untitled";
