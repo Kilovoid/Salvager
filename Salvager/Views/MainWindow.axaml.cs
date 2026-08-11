@@ -9,12 +9,4 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
-
-    private void OnWindowClosed(object sender, System.EventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            vm.SaveAllNotes();
-        }
-    }
 }

@@ -32,7 +32,7 @@ namespace Salvager.ViewModels
 
         private void LoadNotesFromDisk()
         {
-            var loadedNotes = _noteService.LoadAllNotes();
+            var loadedNotes = _noteService.LoadAll();
             Notes.Clear();
             foreach (var note in loadedNotes)
             {
@@ -45,7 +45,7 @@ namespace Salvager.ViewModels
         [RelayCommand]
         private void CreateNewNote()
         {
-            var newNote = new Note{ Title = "Empty note"};
+            var newNote = new Note("New Note", "");
             CreateNewNote(newNote);
         }
         private void CreateNewNote(Note note)
@@ -58,10 +58,16 @@ namespace Salvager.ViewModels
         [RelayCommand]
         private void CreateNewPage()
         {
-            var newNote = new Note();
+            var newNote = new Note("New Note", "");
             Notes.Add(newNote);
             SelectedNote = newNote;
             SelectedNoteViewModel = new EditorViewModel(newNote);
+        }
+        [RelayCommand]
+        private void SaveNote()
+        {
+            if (SelectedNote == null) return;
+            _noteService.SaveNote(SelectedNote);
         }
 
         partial void OnSelectedNoteChanged(Note value)
@@ -70,10 +76,6 @@ namespace Salvager.ViewModels
             {
                 SelectedNoteViewModel = new EditorViewModel(value);
             }
-        }
-        public void SaveAllNotes()
-        {
-            _noteService.SaveAll(Notes.ToList());
         }
     }
 }

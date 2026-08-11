@@ -1,4 +1,5 @@
-﻿using Salvager.Models;
+﻿using Avalonia.Platform;
+using Salvager.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,7 +36,7 @@ namespace Salvager.Services
 
         public void DeleteNote(Guid noteId)
         {
-            if (string.IsNullOrEmpty(noteId.ToString()))
+            if (noteId == Guid.Empty)
             {
                 throw new ArgumentNullException($"Id ({noteId}) cannot be null!");
             }
@@ -98,7 +99,7 @@ namespace Salvager.Services
             string content = currentNote.Content;
             string noteContents = $"{title}\n{content}";
 
-            string fileName = $"{currentNote}.md";
+            string fileName = $"{currentNote.Id}.md";
             string filePath = Path.Combine(_notesDirectory, fileName);
             File.WriteAllText(filePath, noteContents, Encoding.UTF8);
         }

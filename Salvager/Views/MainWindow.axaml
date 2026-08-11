@@ -6,7 +6,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Salvager.Views.MainWindow"
-                Closed="OnWindowClosed"
         x:DataType="vm:MainWindowViewModel" 
         Title="Salvager">
     <Design.DataContext>
@@ -26,6 +25,12 @@
                     Margin="5"
                     HorizontalAlignment="Stretch">
                 Create
+            </Button>
+            <Button DockPanel.Dock="Top"
+                    Command="{Binding SaveNoteCommand}"
+                    Margin="5"
+                    HorizontalAlignment="Stretch">
+                Save
             </Button>
 
             <ListBox ItemsSource="{Binding Notes}"
