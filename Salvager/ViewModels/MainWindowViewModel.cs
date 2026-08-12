@@ -38,8 +38,10 @@ namespace Salvager.ViewModels
             {
                 Notes.Add(note);
             }
-            SelectedNote = Notes.First();
-            SelectedNoteViewModel = new EditorViewModel(SelectedNote);
+            SelectedNote = Notes.FirstOrDefault();
+            SelectedNoteViewModel = SelectedNote != null
+                ? new EditorViewModel(SelectedNote)
+                : null;
         }
 
         [RelayCommand]

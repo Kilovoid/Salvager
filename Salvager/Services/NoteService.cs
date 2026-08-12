@@ -64,6 +64,8 @@ namespace Salvager.Services
                 using var reader = new StreamReader(mdFile);
                 string title = reader.ReadLine() ?? "Untitled";
                 string content = reader.ReadToEnd();
+                //string fileName = Path.GetFileNameWithoutExtension(mdFile);
+                //Guid noteId = Guid.Parse(fileName);
                 Note loadedNote = new Note(title, content);
                 notesToLoad.Add(loadedNote);
             }
