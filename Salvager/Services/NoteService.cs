@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Tmds.DBus.Protocol;
 
 namespace Salvager.Services
 {
@@ -64,7 +63,9 @@ namespace Salvager.Services
                 using var reader = new StreamReader(mdFile);
                 string title = reader.ReadLine() ?? "Untitled";
                 string content = reader.ReadToEnd();
-                Note loadedNote = new Note(title, content);
+                string fileName = Path.GetFileNameWithoutExtension(mdFile);
+                Guid id = Guid.Parse(fileName);
+                Note loadedNote = new Note(id, title, content, File.GetCreationTime(mdFile));
                 notesToLoad.Add(loadedNote);
             }
             return notesToLoad;
@@ -82,7 +83,7 @@ namespace Salvager.Services
             using var reader = new StreamReader(filePath);
             string title = reader.ReadLine() ?? "Untitled";
             string content = reader.ReadToEnd();
-            Note loadedNote = new Note(title, content);
+            Note loadedNote = new Note(noteId, title, content, File.GetCreationTime(filePath));
             return loadedNote;
         }
         public void SaveNote(Note currentNote)
