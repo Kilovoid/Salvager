@@ -21,7 +21,7 @@
     <Grid ColumnDefinitions="250, *">
         <DockPanel Grid.Column="0">
             <Button DockPanel.Dock="Top"
-                    Command="{Binding CreateNewPageCommand}"
+                    Command="{Binding CreateNewNoteCommand}"
                     Margin="5"
                     HorizontalAlignment="Stretch">
                 Create
