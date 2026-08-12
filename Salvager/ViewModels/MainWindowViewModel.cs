@@ -58,14 +58,6 @@ namespace Salvager.ViewModels
             SelectedNoteViewModel = new EditorViewModel(note);
         }
         [RelayCommand]
-        private void CreateNewPage()
-        {
-            var newNote = new Note("New Note", "");
-            Notes.Add(newNote);
-            SelectedNote = newNote;
-            SelectedNoteViewModel = new EditorViewModel(newNote);
-        }
-        [RelayCommand]
         private void SaveNote()
         {
             if (SelectedNote == null) return;
