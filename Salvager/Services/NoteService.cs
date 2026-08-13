@@ -15,7 +15,9 @@ namespace Salvager.Services
         public NoteService()
         {
             _notesDirectory = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "Data", "Notes"
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Salvager",
+                "Notes"
                 );
         }
         public Note CreateNote(string title)
