@@ -32,6 +32,12 @@
                     HorizontalAlignment="Stretch">
                 Save
             </Button>
+            <Button DockPanel.Dock="Top"
+                    Command="{Binding DeleteNoteCommand}"
+                    Margin="5"
+                    HorizontalAlignment="Stretch">
+                Delete
+            </Button>
 
             <ListBox ItemsSource="{Binding Notes}"
                      DisplayMemberBinding="{Binding Title}"

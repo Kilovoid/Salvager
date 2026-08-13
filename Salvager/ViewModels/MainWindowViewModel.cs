@@ -19,10 +19,10 @@ namespace Salvager.ViewModels
         public ObservableCollection<Note> Notes { get; set; } = new();
 
         [ObservableProperty]
-        private Note _selectedNote;
+        private Note? _selectedNote;
 
         [ObservableProperty]
-        private EditorViewModel _selectedNoteViewModel;
+        private EditorViewModel? _selectedNoteViewModel;
 
         public MainWindowViewModel(INoteService noteService)
         {
@@ -63,7 +63,17 @@ namespace Salvager.ViewModels
             if (SelectedNote == null) return;
             _noteService.SaveNote(SelectedNote);
         }
-
+        [RelayCommand]
+        private void DeleteNote()
+        {
+            if (SelectedNote == null) return;
+            _noteService.DeleteNote(SelectedNote.Id);
+            Notes.Remove(SelectedNote);
+            SelectedNote = Notes.FirstOrDefault();
+            SelectedNoteViewModel = SelectedNote != null
+                ? new EditorViewModel(SelectedNote)
+                : null;
+        }
         partial void OnSelectedNoteChanged(Note value)
         {
             if (value != null)
