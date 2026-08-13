@@ -9,6 +9,10 @@ using CommunityToolkit.Mvvm.Input;
 using System.Xml.Serialization;
 using Salvager.Services;
 using System.Linq;
+using System.Threading.Tasks;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
+using System.IO;
 
 
 namespace Salvager.ViewModels
@@ -58,9 +62,37 @@ namespace Salvager.ViewModels
             SelectedNoteViewModel = new EditorViewModel(note);
         }
         [RelayCommand]
-        private void SaveNote()
+        private async Task SaveNote()
         {
             if (SelectedNote == null) return;
+            try
+            {
+                _noteService.SaveNote(SelectedNote);
+            }
+            catch (ArgumentNullException ex)
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", "Not to save is null!", ButtonEnum.Ok);
+                await box.ShowAsync();
+            }
+            catch (ArgumentException ex)
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", $"Error in data : {ex.Message}", ButtonEnum.Ok);
+                await box.ShowAsync();
+            }
+            catch (IOException ex)
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", $"Unable to save the note, please check the directory and disk :: {ex.Message}", ButtonEnum.Ok);
+                await box.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", $"Unknown Error, please restart the app!", ButtonEnum.Ok);
+                await box.ShowAsync();
+            }
             _noteService.SaveNote(SelectedNote);
         }
         [RelayCommand]

@@ -22,6 +22,7 @@ namespace Salvager.Services
         }
         public Note CreateNote(string title)
         {
+
             if (string.IsNullOrEmpty(title))
             {
                 throw new ArgumentNullException("Title cannot be null", nameof(title));
@@ -96,6 +97,10 @@ namespace Salvager.Services
             if (currentNote == null)
             {
                 throw new ArgumentNullException(nameof(currentNote));
+            }
+            if (string.IsNullOrWhiteSpace(currentNote.Title))
+            {
+                throw new ArgumentException("Title cannot be blank!", nameof(currentNote));
             }
             if (currentNote.Id == Guid.Empty)
             {
