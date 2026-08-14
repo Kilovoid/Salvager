@@ -75,7 +75,7 @@ namespace Salvager.ViewModels
             try
             {
                 _noteService.SaveNote(SelectedNote);
-                SelectedNote.IsDirty = false;
+                SelectedNoteViewModel?.ResetSnapshot();
             }
             catch (ArgumentNullException ex)
             {
