@@ -15,20 +15,25 @@ namespace Salvager.Models
         public string _content = "";
         [ObservableProperty]
         public DateTime _createdAt = DateTime.Now;
+        [ObservableProperty]
+        public DateTime _updatedAt = DateTime.Now;
 
         public Note(string title, string content)
         {
             _title = title;
             _content = content;
             _id = Guid.Empty;
+            _createdAt = DateTime.Now;
+            _updatedAt = DateTime.Now;
         }
 
-        public Note(Guid id, string title, string content, DateTime createdAt)
+        public Note(Guid id, string title, string content, DateTime createdAt, DateTime updatedAt)
         {
             _id = id;
             _title = title;
             _content = content;
             _createdAt = createdAt;
+            _updatedAt = UpdatedAt;
         }
     }
 }

@@ -71,7 +71,8 @@ namespace Salvager.Services
                 using var reader = new StreamReader(mdFile);
                 string title = reader.ReadLine() ?? "Untitled";
                 string content = reader.ReadToEnd();
-                Note loadedNote = new Note(noteId, title, content, File.GetCreationTime(mdFile));
+                Note loadedNote = new Note(noteId, title, content,
+                    File.GetCreationTime(mdFile), File.GetLastWriteTime(mdFile));
                 notesToLoad.Add(loadedNote);
             }
             return notesToLoad;
@@ -89,7 +90,8 @@ namespace Salvager.Services
             using var reader = new StreamReader(filePath);
             string title = reader.ReadLine() ?? "Untitled";
             string content = reader.ReadToEnd();
-            Note loadedNote = new Note(noteId, title, content, File.GetCreationTime(filePath));
+            Note loadedNote = new Note(noteId, title, content,
+                File.GetCreationTime(filePath), File.GetLastWriteTime(filePath));
             return loadedNote;
         }
         public void SaveNote(Note currentNote)
@@ -106,6 +108,7 @@ namespace Salvager.Services
             {
                 currentNote.Id = Guid.NewGuid();
             }
+            currentNote.UpdatedAt = DateTime.Now;
             string title = currentNote.Title;
             string content = currentNote.Content;
             string noteContents = $"{title}\n{content}";

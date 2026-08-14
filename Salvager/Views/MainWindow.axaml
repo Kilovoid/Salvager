@@ -8,9 +8,6 @@
         x:Class="Salvager.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel" 
         Title="Salvager">
-    <Design.DataContext>
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
 
     <Window.DataTemplates>
         <DataTemplate DataType="vm:EditorViewModel">
@@ -40,9 +37,23 @@
             </Button>
 
             <ListBox ItemsSource="{Binding Notes}"
-                     DisplayMemberBinding="{Binding Title}"
                      SelectedItem="{Binding SelectedNote}"
-                     Margin="5" />
+                     Margin="5">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="5" Margin="0,0,0,2">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding UpdatedAt}"
+                                           FontSize="10"
+                                           Foreground="White"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>    
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox> 
+            
         </DockPanel>
         <ContentControl Grid.Column="1"
                         Content="{Binding SelectedNoteViewModel}"/>
