@@ -54,8 +54,15 @@ namespace Salvager.ViewModels
             var newNote = new Note("New Note", "");
             CreateNewNote(newNote);
         }
-        private void CreateNewNote(Note note)
+        private async Task CreateNewNote(Note note)
         {
+            if (string.IsNullOrWhiteSpace(note.Title))
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    "Warning" ,"Check the title of the new note", ButtonEnum.Ok);
+                await box.ShowAsync();
+                return;
+            }
             Notes.Add(note);
             _noteService.SaveNote(note);
             SelectedNote = note;
@@ -96,9 +103,16 @@ namespace Salvager.ViewModels
             _noteService.SaveNote(SelectedNote);
         }
         [RelayCommand]
-        private void DeleteNote()
+        private async Task DeleteNote()
         {
             if (SelectedNote == null) return;
+            var box = MessageBoxManager.GetMessageBoxStandard(
+                "Warning", "Are you sure you want to delete this note?", ButtonEnum.OkCancel);
+            ButtonResult result = await box.ShowAsync();
+            if (result == ButtonResult.Cancel)
+            {
+                return;
+            }
             _noteService.DeleteNote(SelectedNote.Id);
             Notes.Remove(SelectedNote);
             SelectedNote = Notes.FirstOrDefault();
