@@ -1,5 +1,6 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:cvt="clr-namespace:Salvager.Converters"
         xmlns:vm="using:Salvager.ViewModels"
         xmlns:views="using:Salvager.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -14,6 +15,14 @@
             <views:EditorView/>
         </DataTemplate>
     </Window.DataTemplates>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveNoteCommand}"/>
+    </Window.KeyBindings>
+
+    <Window.Resources>
+        <cvt:DirtyStatusConverter x:Key ="DirtyStatusConverter"/>
+    </Window.Resources>
 
     <Grid ColumnDefinitions="250, *">
         <DockPanel Grid.Column="0">
@@ -44,10 +53,17 @@
                         <Border Padding="5" Margin="0,0,0,2">
                             <StackPanel>
                                 <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding UpdatedAt}"
-                                           FontSize="10"
-                                           Foreground="White"
-                                           Margin="0,2,0,0"/>
+                                <DockPanel Margin="0,2,0,0">
+                                    <TextBlock Text="{Binding UpdatedAt}"
+                                               FontSize="10"
+                                               Foreground="White"
+                                               DockPanel.Dock="Left"/>
+                                    <TextBlock Text="{Binding IsDirty, Converter={StaticResource DirtyStatusConverter}}"
+                                               FontSize="12"
+                                               Foreground="GreenYellow"
+                                               DockPanel.Dock="Right"
+                                               Margin="60,0,0,0"/>
+                                </DockPanel>
                             </StackPanel>
                         </Border>    
                     </DataTemplate>

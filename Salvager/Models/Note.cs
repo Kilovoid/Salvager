@@ -17,6 +17,8 @@ namespace Salvager.Models
         public DateTime _createdAt = DateTime.Now;
         [ObservableProperty]
         public DateTime _updatedAt = DateTime.Now;
+        [ObservableProperty]
+        private bool _isDirty;
 
         public Note(string title, string content)
         {
@@ -25,6 +27,7 @@ namespace Salvager.Models
             _id = Guid.Empty;
             _createdAt = DateTime.Now;
             _updatedAt = DateTime.Now;
+            _isDirty = false;
         }
 
         public Note(Guid id, string title, string content, DateTime createdAt, DateTime updatedAt)
@@ -34,6 +37,7 @@ namespace Salvager.Models
             _content = content;
             _createdAt = createdAt;
             _updatedAt = UpdatedAt;
+            _isDirty = false;
         }
     }
 }
