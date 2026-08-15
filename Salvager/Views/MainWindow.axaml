@@ -27,11 +27,14 @@
     <Grid ColumnDefinitions="280, *">
         <DockPanel Grid.Column="0">
             <Menu DockPanel.Dock="Top">
-            <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
-            <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
-            <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
-            <Separator/>
-            <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
+                <MenuItem Header ="File">
+                    <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
+                    <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
+                    <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
+                    <MenuItem Header="Sort" Command="{Binding DoSortCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
+                </MenuItem>
         </Menu>
 
             <ListBox ItemsSource="{Binding Notes}"

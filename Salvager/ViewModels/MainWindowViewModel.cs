@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using System.IO;
+using System.Net.Http.Headers;
 
 
 namespace Salvager.ViewModels
@@ -21,6 +22,9 @@ namespace Salvager.ViewModels
     {
         private readonly INoteService _noteService;
         public ObservableCollection<Note> Notes { get; set; } = new();
+
+        [ObservableProperty]
+        private bool _sortAscending = true;
 
         [ObservableProperty]
         private Note? _selectedNote;
@@ -120,6 +124,24 @@ namespace Salvager.ViewModels
             SelectedNoteViewModel = SelectedNote != null
                 ? new EditorViewModel(SelectedNote)
                 : null;
+        }
+
+        [RelayCommand]
+        private void DoSort()
+        {
+            System.Diagnostics.Debug.WriteLine($"Before sort: {Notes.Count}");
+            Console.WriteLine("HEEEEELLLLLLOOOOOO!!!!!");
+            var sorted = SortAscending
+                ? Notes.OrderBy(n => n.UpdatedAt)
+                : Notes.OrderByDescending(n => n.UpdatedAt);
+            var list = sorted.ToList();
+            System.Diagnostics.Debug.WriteLine($"Sorted: {list.Count}");
+            Notes.Clear();
+            foreach (var note in sorted)
+            {
+                Notes.Add(note);
+            }
+            SortAscending = !SortAscending;
         }
 
         [RelayCommand]
