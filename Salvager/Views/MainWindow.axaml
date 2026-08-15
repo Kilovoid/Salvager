@@ -24,26 +24,15 @@
         <cvt:DirtyStatusConverter x:Key ="DirtyStatusConverter"/>
     </Window.Resources>
 
-    <Grid ColumnDefinitions="250, *">
+    <Grid ColumnDefinitions="280, *">
         <DockPanel Grid.Column="0">
-            <Button DockPanel.Dock="Top"
-                    Command="{Binding CreateNewNoteCommand}"
-                    Margin="5"
-                    HorizontalAlignment="Stretch">
-                Create
-            </Button>
-            <Button DockPanel.Dock="Top"
-                    Command="{Binding SaveNoteCommand}"
-                    Margin="5"
-                    HorizontalAlignment="Stretch">
-                Save
-            </Button>
-            <Button DockPanel.Dock="Top"
-                    Command="{Binding DeleteNoteCommand}"
-                    Margin="5"
-                    HorizontalAlignment="Stretch">
-                Delete
-            </Button>
+            <Menu DockPanel.Dock="Top">
+            <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
+            <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
+            <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
+            <Separator/>
+            <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
+        </Menu>
 
             <ListBox ItemsSource="{Binding Notes}"
                      SelectedItem="{Binding SelectedNote}"

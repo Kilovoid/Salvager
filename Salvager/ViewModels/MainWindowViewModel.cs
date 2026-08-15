@@ -121,6 +121,12 @@ namespace Salvager.ViewModels
                 ? new EditorViewModel(SelectedNote)
                 : null;
         }
+
+        [RelayCommand]
+        private void Exit()
+        {
+            Environment.Exit(0);
+        }
         partial void OnSelectedNoteChanged(Note value)
         {
             if (value != null)
