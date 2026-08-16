@@ -31,7 +31,14 @@ public partial class MainWindow : Window
     }
     private void MaximizeButton_Click(object sender, RoutedEventArgs e)
     {
-        this.WindowState = WindowState.FullScreen;
+        if (WindowState != WindowState.FullScreen)
+        {
+            this.WindowState = WindowState.FullScreen;
+        }
+        else
+        {
+            this.WindowState = WindowState.Normal;
+        }
     }
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {

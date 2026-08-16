@@ -14,5 +14,6 @@ namespace Salvager.Services
         Note LoadNote(Guid noteId); ///Или LoadNote(). В любом случае тут сложнее - а по чему обращаться? См. выше
         List<Note> LoadAll(); ///Может деприцировать этот метод? Он как будто не для GUI. Заменить на SaveAll()?
         void SaveNote(Note currentNote); ///Сохраняется выбранная по нажатию кнопки Save
+        
     }
 }
