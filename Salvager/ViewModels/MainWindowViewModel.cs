@@ -21,10 +21,13 @@ namespace Salvager.ViewModels
     public partial class MainWindowViewModel : ObservableObject
     {
         private readonly INoteService _noteService;
-        public ObservableCollection<Note> Notes { get; set; } = new();
 
         [ObservableProperty]
-        private bool _sortAscending = true;
+        private ObservableCollection<Note> _notes = new();
+        //public ObservableCollection<Note> Notes { get; set; } = new();
+
+        [ObservableProperty]
+        private bool _sortDescending = true;
 
         [ObservableProperty]
         private Note? _selectedNote;
@@ -105,7 +108,6 @@ namespace Salvager.ViewModels
                     "Error", $"Unknown Error, please restart the app!", ButtonEnum.Ok);
                 await box.ShowAsync();
             }
-            _noteService.SaveNote(SelectedNote);
         }
         [RelayCommand]
         private async Task DeleteNote()
@@ -130,18 +132,26 @@ namespace Salvager.ViewModels
         private void DoSort()
         {
             System.Diagnostics.Debug.WriteLine($"Before sort: {Notes.Count}");
-            Console.WriteLine("HEEEEELLLLLLOOOOOO!!!!!");
-            var sorted = SortAscending
-                ? Notes.OrderBy(n => n.UpdatedAt)
-                : Notes.OrderByDescending(n => n.UpdatedAt);
-            var list = sorted.ToList();
-            System.Diagnostics.Debug.WriteLine($"Sorted: {list.Count}");
-            Notes.Clear();
-            foreach (var note in sorted)
+            var sorted = SortDescending
+                ? Notes.OrderByDescending(n => n.UpdatedAt).ToList()
+                : Notes.OrderBy(n => n.UpdatedAt).ToList();
+            for (int i =0; i < sorted.Count; i++)
             {
-                Notes.Add(note);
+                var note = sorted[i];
+                int currentIndex = Notes.IndexOf(note);
+                if (currentIndex != i)
+                {
+                    Notes.Move(currentIndex, i);
+                }
             }
-            SortAscending = !SortAscending;
+            //var list = sorted.ToList();
+            //System.Diagnostics.Debug.WriteLine($"Sorted: {list.Count}");
+            //Notes.Clear();
+            //foreach (var note in sorted)
+            //{
+            //    Notes.Add(note);
+            //}
+            SortDescending = !SortDescending;
         }
 
         [RelayCommand]

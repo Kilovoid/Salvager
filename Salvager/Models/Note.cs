@@ -36,7 +36,7 @@ namespace Salvager.Models
             _title = title;
             _content = content;
             _createdAt = createdAt;
-            _updatedAt = UpdatedAt;
+            _updatedAt = updatedAt;
             _isDirty = false;
         }
     }
