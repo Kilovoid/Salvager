@@ -16,13 +16,13 @@ public partial class MainWindow : Window
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         var focused = FocusManager.GetFocusedElement();
-        if (focused is TextBox)
+        //if (focused is TextBox)
+        //{
+        if(e.Key == Key.LeftAlt || e.Key == Key.RightAlt)
         {
-            if(e.Key == Key.LeftAlt)
-            {
-                e.Handled = true;
-            }
+            e.Handled = true;
         }
+        //}
     }
     
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)

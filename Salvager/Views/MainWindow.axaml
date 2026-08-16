@@ -41,7 +41,7 @@
                         <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
                     </MenuItem>
                 </Menu>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,0,0" DockPanel.Dock="Left">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,0,0" DockPanel.Dock="Right">
                     <Button Content="_" Click="MinimizeButton_Click"/>
                     <Button Content="☐" Click="MaximizeButton_Click"/>
                     <Button Content="✕" Click="CloseButton_Click"/>
