@@ -20,6 +20,8 @@
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveNoteCommand}"/>
+        <KeyBinding Gesture ="Ctrl+N" Command="{Binding CreateNewNoteCommand}"/>
+        <KeyBinding Gesture ="Ctrl+D" Command="{Binding DeleteNoteCommand}"/>
     </Window.KeyBindings>
 
     <Window.Resources>
