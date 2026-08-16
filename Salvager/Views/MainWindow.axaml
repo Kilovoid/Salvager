@@ -7,8 +7,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Salvager.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel" 
+        x:DataType="vm:MainWindowViewModel"
+        WindowDecorations ="None"
         Title="Salvager">
+
 
     <Window.DataTemplates>
         <DataTemplate DataType="vm:EditorViewModel">
@@ -24,22 +26,33 @@
         <cvt:DirtyStatusConverter x:Key ="DirtyStatusConverter"/>
     </Window.Resources>
 
-    <Grid ColumnDefinitions="280, *">
-        <DockPanel Grid.Column="0">
-            <Menu DockPanel.Dock="Top">
-                <MenuItem Header ="File">
-                    <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
-                    <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
-                    <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
-                    <MenuItem Header="Sort" Command="{Binding DoSortCommand}"/>
-                    <Separator/>
-                    <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
-                </MenuItem>
-        </Menu>
+    <Grid RowDefinitions="40,*">
+        <Border Grid.Row="0" Background="Black">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,0,0" DockPanel.Dock="Left">
+                    <Button Content="_" Click="MinimizeButton_Click"/>
+                    <Button Content="☐" Click="MaximizeButton_Click"/>
+                    <Button Content="✕" Click="CloseButton_Click"/>
+                </StackPanel>  
+            </DockPanel>
+        </Border>
+        <DockPanel Grid.Row="1">
+            <Grid ColumnDefinitions="280, *">
+                <DockPanel Grid.Column="0">
+                    <Menu DockPanel.Dock="Top">
+                        <MenuItem Header ="File">
+                            <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
+                            <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
+                            <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
+                            <MenuItem Header="Sort" Command="{Binding DoSortCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
+                        </MenuItem>
+                </Menu>
 
-            <ListBox ItemsSource="{Binding Notes}"
-                     SelectedItem="{Binding SelectedNote}"
-                     Margin="5">
+                <ListBox ItemsSource="{Binding Notes}"
+                    SelectedItem="{Binding SelectedNote}"
+                    Margin="5">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border Padding="5" Margin="0,0,0,2">
@@ -66,5 +79,9 @@
         <ContentControl Grid.Column="1"
                         Content="{Binding SelectedNoteViewModel}"/>
     </Grid>
+        </DockPanel>
+    </Grid>
+
+    
 
 </Window>

@@ -24,4 +24,17 @@ public partial class MainWindow : Window
             }
         }
     }
+    
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.Minimized;
+    }
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.FullScreen;
+    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        this.Close();
+    }
 }
