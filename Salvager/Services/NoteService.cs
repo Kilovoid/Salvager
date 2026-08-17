@@ -1,16 +1,59 @@
-﻿using Avalonia.Platform;
+﻿using Avalonia.Controls;
+using Avalonia.Platform;
 using Salvager.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Salvager.Services
 {
     internal class NoteService : INoteService
     {
         private readonly string _notesDirectory;
+
+        private static readonly IDeserializer _deserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
+        private static readonly ISerializer _serializer = new SerializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+            .Build();
+
+        private string BuildFileContent(Note note)
+        {
+            var metadata = new NoteMetadata
+            {
+                Id = note.Id,
+                Title = note.Title,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+            string frontmatter = _serializer.Serialize(metadata);
+            return $"---\n{frontmatter}---\n\n{note.Content}";
+        }
+        private (Note, string contentBody) ParseFileContent(string fileContent)
+        {
+            int start = fileContent.IndexOf("---");
+            if (start == -1) throw new InvalidDataException("No frontmatter found");
+
+            int end = fileContent.IndexOf("---", start + 3);
+            if (end == -1) throw new InvalidDataException("Unclosed frontmatter");
+
+            string yaml = fileContent.Substring(start + 3, end - start - 3).Trim();
+            string body = fileContent.Substring(end + 3).TrimStart('\n');
+
+            var metadata = _deserializer.Deserialize<NoteMetadata>(yaml);
+            var note = new Note(metadata.Id,
+                metadata.Title, body, metadata.CreatedAt, metadata.UpdatedAt);
+
+            return (note, body);
+        }
 
         public NoteService()
         {
@@ -63,36 +106,60 @@ namespace Salvager.Services
             string[] mdFiles = Directory.GetFiles(_notesDirectory, "*.md");
             foreach (string mdFile in mdFiles)
             {
-                string fileName = Path.GetFileNameWithoutExtension(mdFile);
-                if (!Guid.TryParse(fileName, out Guid noteId))
+                try
                 {
-                    continue;
+                    string content = File.ReadAllText(mdFile);
+                    var (note, _) = ParseFileContent(content);
+                    notesToLoad.Add(note);
                 }
-                using var reader = new StreamReader(mdFile);
-                string title = reader.ReadLine() ?? "Untitled";
-                string content = reader.ReadToEnd();
-                Note loadedNote = new Note(noteId, title, content,
-                    File.GetCreationTime(mdFile), File.GetLastWriteTime(mdFile));
-                notesToLoad.Add(loadedNote);
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading {mdFile}: {ex.Message}");
+                }
             }
             return notesToLoad;
         }
 
         public Note LoadNote(Guid noteId)
         {
-            string fileName = noteId + ".md";
-            string[] matchingFiles = Directory.GetFiles(_notesDirectory, fileName);
-            if (matchingFiles.Length == 0)
+            if (noteId == Guid.Empty)
             {
-                throw new FileNotFoundException($"Note with id {noteId} is not found in {_notesDirectory}");
+                throw new ArgumentNullException("Guid cannot be null", nameof(noteId));
             }
-            string filePath = matchingFiles[0];
-            using var reader = new StreamReader(filePath);
-            string title = reader.ReadLine() ?? "Untitled";
-            string content = reader.ReadToEnd();
-            Note loadedNote = new Note(noteId, title, content,
-                File.GetCreationTime(filePath), File.GetLastWriteTime(filePath));
-            return loadedNote;
+            if (!Directory.Exists(_notesDirectory))
+            {
+                throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
+            }
+            foreach(string filePath in Directory.GetFiles(_notesDirectory))
+            {
+                try
+                {
+                    string content = File.ReadAllText(filePath);
+                    var (note, _) = ParseFileContent(content);
+                    if (note.Id == noteId)
+                    {
+                        return note;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing file {filePath}: {ex.Message}");
+                }
+            }
+            throw new FileNotFoundException($"Note with ID {noteId} does not exist");
+            //string fileName = noteId + ".md";
+            //string[] matchingFiles = Directory.GetFiles(_notesDirectory, fileName);
+            //if (matchingFiles.Length == 0)
+            //{
+            //    throw new FileNotFoundException($"Note with id {noteId} is not found in {_notesDirectory}");
+            //}
+            //string filePath = matchingFiles[0];
+            //using var reader = new StreamReader(filePath);
+            //string title = reader.ReadLine() ?? "Untitled";
+            //string content = reader.ReadToEnd();
+            //Note loadedNote = new Note(noteId, title, content,
+            //    File.GetCreationTime(filePath), File.GetLastWriteTime(filePath));
+            //return loadedNote;
         }
         public void SaveNote(Note currentNote)
         {
@@ -108,14 +175,44 @@ namespace Salvager.Services
             {
                 currentNote.Id = Guid.NewGuid();
             }
-            currentNote.UpdatedAt = DateTime.Now;
-            string title = currentNote.Title;
-            string content = currentNote.Content;
-            string noteContents = $"{title}\n{content}";
-
-            string fileName = $"{currentNote.Id}.md";
+            string baseFileName = currentNote.Title;
+            string fileName = baseFileName + ".md";
             string filePath = Path.Combine(_notesDirectory, fileName);
-            File.WriteAllText(filePath, noteContents, Encoding.UTF8);
+
+            if (File.Exists(filePath))
+            {
+                var existingNote = LoadNoteByFilePath(filePath);
+                if (existingNote == null || existingNote.Id != currentNote.Id)
+                {
+                    fileName = GetUniqueFileName(baseFileName);
+                    filePath = Path.Combine(_notesDirectory, fileName);
+                }
+            }
+
+            string content = BuildFileContent(currentNote);
+            File.WriteAllText(filePath, content, Encoding.UTF8);
+        }
+
+        private Note? LoadNoteByFilePath(string filePath)
+        {
+            try
+            {
+                string content = File.ReadAllText(filePath);
+                var (note, _) = ParseFileContent(content);
+                return note;
+            }
+            catch { return null; }
+        }
+
+        private string GetUniqueFileName(string baseName)
+        {
+            int counter = 1;
+            string candidate = baseName;
+            while (File.Exists(Path.Combine(_notesDirectory, candidate+".md")))
+            {
+                candidate = $"{baseName} ({counter++})";
+            }
+            return candidate + ".md";
         }
     }
 }
