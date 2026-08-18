@@ -63,6 +63,7 @@ namespace Salvager.Services
                 "Salvager",
                 "Notes"
                 );
+            MigrateOldFiles();
         }
         public Note CreateNote(string title)
         {
@@ -193,7 +194,7 @@ namespace Salvager.Services
             }
             currentNote.UpdatedAt = DateTime.Now;
             string? oldFilePath = FindNoteFileById(currentNote.Id);
-            string newFileName = currentNote.Title + ".md";
+            string newFileName = SanitizeName(currentNote.Title) + ".md";
             string newFilePath = Path.Combine(_notesDirectory, newFileName);
 
             if (oldFilePath != null && oldFilePath != newFilePath)
@@ -209,6 +210,15 @@ namespace Salvager.Services
 
             string fileContent = BuildFileContent(currentNote);
             File.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+        }
+
+        private string SanitizeName(string title)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                title = title.Replace(c, '_');
+            }
+            return title;
         }
 
         private string? FindNoteFileById(Guid noteId)
@@ -238,6 +248,26 @@ namespace Salvager.Services
                 return note;
             }
             catch { return null; }
+        }
+
+        private void MigrateOldFiles()
+        {
+            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            {
+                string content = File.ReadAllText(filePath);
+                if (content.TrimStart().StartsWith("---"))
+                {
+                    continue;
+                }
+
+                using var reader = new StringReader(content);
+                string title = reader.ReadLine() ?? "Untitled";
+                string body = reader.ReadToEnd();
+                var note = new Note(Guid.NewGuid(), title, body, DateTime.Now, DateTime.Now);
+                string newContent = BuildFileContent(note);
+
+                File.WriteAllText(filePath, newContent, Encoding.UTF8);
+            }
         }
 
         private string GetUniqueFileName(string baseName)
