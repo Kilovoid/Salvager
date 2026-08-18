@@ -131,6 +131,7 @@ namespace Salvager.ViewModels
         [RelayCommand]
         private void DoSort()
         {
+            var selected = SelectedNote;
             System.Diagnostics.Debug.WriteLine($"Before sort: {Notes.Count}");
             var sorted = SortDescending
                 ? Notes.OrderByDescending(n => n.UpdatedAt).ToList()
@@ -151,7 +152,10 @@ namespace Salvager.ViewModels
             //{
             //    Notes.Add(note);
             //}
-            SortDescending = !SortDescending;
+            if (selected != null && Notes.Contains(selected))
+            {
+                SelectedNote = selected;
+            }
         }
 
         [RelayCommand]

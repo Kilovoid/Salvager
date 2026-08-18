@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Xml.Serialization;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -85,13 +86,28 @@ namespace Salvager.Services
             {
                 throw new ArgumentNullException($"Id ({noteId}) cannot be null!");
             }
-            string fileName = (noteId + ".md");
-            string filePath = Path.Combine(_notesDirectory, fileName);
-            if (!File.Exists(filePath))
+            if (!Directory.Exists(_notesDirectory))
             {
-                throw new FileNotFoundException($"File {filePath} is not found!");
+                throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
-            File.Delete(filePath);
+            foreach (string FilePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            {
+                try
+                {
+                    string content = File.ReadAllText(FilePath);
+                    var (note, _) = ParseFileContent(content);
+                    if (note.Id == noteId)
+                    {
+                        File.Delete(FilePath);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading file {FilePath}");
+                }
+            }
+            throw new FileNotFoundException($"Note with id {noteId} was not found");
         }
 
         public List<Note> LoadAll()
@@ -161,7 +177,7 @@ namespace Salvager.Services
             //    File.GetCreationTime(filePath), File.GetLastWriteTime(filePath));
             //return loadedNote;
         }
-        public void SaveNote(Note currentNote)
+        public void SaveNote(Note currentNote) // Надо переписывать заголовок обязательно
         {
             if (currentNote == null)
             {
@@ -175,22 +191,42 @@ namespace Salvager.Services
             {
                 currentNote.Id = Guid.NewGuid();
             }
-            string baseFileName = currentNote.Title;
-            string fileName = baseFileName + ".md";
-            string filePath = Path.Combine(_notesDirectory, fileName);
+            currentNote.UpdatedAt = DateTime.Now;
+            string? oldFilePath = FindNoteFileById(currentNote.Id);
+            string newFileName = currentNote.Title + ".md";
+            string newFilePath = Path.Combine(_notesDirectory, newFileName);
 
-            if (File.Exists(filePath))
+            if (oldFilePath != null && oldFilePath != newFilePath)
             {
-                var existingNote = LoadNoteByFilePath(filePath);
-                if (existingNote == null || existingNote.Id != currentNote.Id)
-                {
-                    fileName = GetUniqueFileName(baseFileName);
-                    filePath = Path.Combine(_notesDirectory, fileName);
-                }
+                File.Delete(oldFilePath);
             }
 
-            string content = BuildFileContent(currentNote);
-            File.WriteAllText(filePath, content, Encoding.UTF8);
+            if (File.Exists(newFilePath) && oldFilePath != newFilePath)
+            {
+                newFileName = GetUniqueFileName(newFileName);
+                newFilePath = Path.Combine(_notesDirectory, newFileName);
+            }
+
+            string fileContent = BuildFileContent(currentNote);
+            File.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+        }
+
+        private string? FindNoteFileById(Guid noteId)
+        {
+            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            {
+                try
+                {
+                    string content = File.ReadAllText(filePath);
+                    var (note, _) = ParseFileContent(content);
+                    if (note.Id == noteId)
+                    {
+                        return filePath;
+                    }
+                }
+                catch { }
+            }
+            return null;
         }
 
         private Note? LoadNoteByFilePath(string filePath)
