@@ -63,6 +63,7 @@ namespace Salvager.Services
                 "Salvager",
                 "Notes"
                 );
+            Directory.CreateDirectory(_notesDirectory);
             MigrateOldFiles();
         }
         public Note CreateNote(string title)
@@ -147,7 +148,7 @@ namespace Salvager.Services
             {
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
-            foreach(string filePath in Directory.GetFiles(_notesDirectory))
+            foreach(string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
             {
                 try
                 {
@@ -194,7 +195,8 @@ namespace Salvager.Services
             }
             currentNote.UpdatedAt = DateTime.Now;
             string? oldFilePath = FindNoteFileById(currentNote.Id);
-            string newFileName = SanitizeName(currentNote.Title) + ".md";
+            string sanitized = SanitizeName(currentNote.Title);
+            string newFileName = sanitized + ".md";
             string newFilePath = Path.Combine(_notesDirectory, newFileName);
 
             if (oldFilePath != null && oldFilePath != newFilePath)
@@ -204,8 +206,9 @@ namespace Salvager.Services
 
             if (File.Exists(newFilePath) && oldFilePath != newFilePath)
             {
-                newFileName = GetUniqueFileName(newFileName);
+                newFileName = GetUniqueFileName(sanitized);
                 newFilePath = Path.Combine(_notesDirectory, newFileName);
+                currentNote.Title = Path.GetFileNameWithoutExtension(newFilePath);
             }
 
             string fileContent = BuildFileContent(currentNote);
