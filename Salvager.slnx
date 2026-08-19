@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Salvager/Salvager.csproj" />
+  <Project Path="Tests/Tests.csproj" Id="ebb7331c-c0fd-427b-940c-8795feb204dc" />
 </Solution>
