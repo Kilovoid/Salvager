@@ -163,6 +163,12 @@ namespace Salvager.ViewModels
         {
             Environment.Exit(0);
         }
+
+        [RelayCommand]
+        private void GenerateError()
+        {
+            throw new InvalidOperationException("Test of the exception from app.axaml.cs");
+        }
         partial void OnSelectedNoteChanged(Note value)
         {
             if (value != null)

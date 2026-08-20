@@ -34,6 +34,7 @@ public partial class App : Application
         var provider = services.BuildServiceProvider();
 
         AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+        Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainVm = provider.GetRequiredService<MainWindowViewModel>();
@@ -44,29 +45,60 @@ public partial class App : Application
         }
         base.OnFrameworkInitializationCompleted();
     }
+
+    private void UIThread_UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
     private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
         Log($"AppDomain Unhandled: {ex?.Message}\n{ex?.StackTrace}");
     }
 
-    private async Task OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        Log($"Dispatcher Unhandled: {e.Exception.Message}\n{e.Exception.StackTrace}");
-        e.Handled = true;
+    //private async Task OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    //{
+    //    Log($"Dispatcher Unhandled: {e.Exception.Message}\n{e.Exception.StackTrace}");
+    //    e.Handled = true;
 
+    //    try
+    //    {
+    //        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+    //            && desktop.MainWindow != null)
+    //        {
+    //            var box = MessageBoxManager.GetMessageBoxStandard(
+    //                "Error", "Unknown error occurred. Please restart the application", ButtonEnum.Ok);
+    //            await box.ShowAsync();
+    //        }
+    //    }
+    //    catch { }
+    //}
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        var ex = e.Exception;
+        Log($"UI Exception: {ex.Message}\n{ex.StackTrace}");
+        e.Handled = true;
+        ShowError(ex.Message, ex.StackTrace).ConfigureAwait(false); 
+    }
+
+    private async Task ShowError(string message, string stackTrace)
+    {
         try
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
-                && desktop.MainWindow != null)
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
             {
+                var details = $"Message: {message} \n\n Stack Trace: {stackTrace}";
                 var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", "Unknown error occurred. Please restart the application", ButtonEnum.Ok);
+                    "Critical error",
+                    "Unknown error, please restart the program",
+                    ButtonEnum.Ok);
                 await box.ShowAsync();
             }
         }
         catch { }
-    }
+    }  
 
     private static void Log(string message)
     {
