@@ -73,6 +73,10 @@ namespace Salvager.Services
             {
                 throw new ArgumentNullException("Title cannot be null", nameof(title));
             }
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                throw new ArgumentException("Title cannot be blank", nameof(title));
+            }
             char[] invalidChars = Path.GetInvalidFileNameChars();
             foreach (char c in invalidChars)
             {
@@ -92,24 +96,47 @@ namespace Salvager.Services
             {
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
-            foreach (string FilePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            //Еще - файл нельзя прочитать
+            //Повреждение
+            string? targetFile = null;
+            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
             {
                 try
                 {
-                    string content = File.ReadAllText(FilePath);
+                    string content = File.ReadAllText(filePath);
                     var (note, _) = ParseFileContent(content);
                     if (note.Id == noteId)
                     {
-                        File.Delete(FilePath);
+                        targetFile = filePath;
                         return;
                     }
                 }
-                catch (Exception ex)
+                catch (IOException ex)
                 {
-                    Console.WriteLine($"Error reading file {FilePath}");
+                    App.Log($"Cannot read file {filePath}: {ex.Message}");
+                }
+                catch (InvalidDataException ex)
+                {
+                    App.Log($"Invalid format in file {filePath}: {ex.Message}");
                 }
             }
-            throw new FileNotFoundException($"Note with id {noteId} was not found");
+            if (targetFile == null)
+            {
+                throw new FileNotFoundException($"Note with ID {noteId} is not found");
+            }
+            
+            try
+            {
+                File.Delete(targetFile);
+            }
+            catch (IOException ex)
+            {
+                App.Log($"Failed to delete file {targetFile} : {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                App.Log($"Access denied to file {targetFile} : {ex.Message}");
+            }
         }
 
         public List<Note> LoadAll()

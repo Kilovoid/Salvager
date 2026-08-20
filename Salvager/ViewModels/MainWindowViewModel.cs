@@ -87,7 +87,7 @@ namespace Salvager.ViewModels
             catch (ArgumentNullException ex)
             {
                 var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", "Not to save is null!", ButtonEnum.Ok);
+                    "Error", "Note to save is null!", ButtonEnum.Ok);
                 await box.ShowAsync();
             }
             catch (ArgumentException ex)

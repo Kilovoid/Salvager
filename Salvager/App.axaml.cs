@@ -45,12 +45,6 @@ public partial class App : Application
         }
         base.OnFrameworkInitializationCompleted();
     }
-
-    private void UIThread_UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
-
     private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
@@ -75,7 +69,7 @@ public partial class App : Application
     //    catch { }
     //}
 
-    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    private async void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         var ex = e.Exception;
         Log($"UI Exception: {ex.Message}\n{ex.StackTrace}");
@@ -100,7 +94,7 @@ public partial class App : Application
         catch { }
     }  
 
-    private static void Log(string message)
+    public static void Log(string message)
     {
         try
         {
