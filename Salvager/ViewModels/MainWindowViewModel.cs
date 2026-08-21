@@ -119,12 +119,28 @@ namespace Salvager.ViewModels
             {
                 return;
             }
-            _noteService.DeleteNote(SelectedNote.Id);
-            Notes.Remove(SelectedNote);
-            SelectedNote = Notes.FirstOrDefault();
-            SelectedNoteViewModel = SelectedNote != null
-                ? new EditorViewModel(SelectedNote)
-                : null;
+            try
+            {
+                _noteService.DeleteNote(SelectedNote.Id);
+                Notes.Remove(SelectedNote);
+                SelectedNote = Notes.FirstOrDefault();
+                SelectedNoteViewModel = SelectedNote != null
+                    ? new EditorViewModel(SelectedNote)
+                    : null;
+            }
+            catch (ArgumentNullException ex)
+            {
+                var errorBox = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", $"{ex.Message}", ButtonEnum.Ok);
+                await errorBox.ShowAsync();
+            }
+            catch (ArgumentException ex)
+            {
+                var errorBox = MessageBoxManager.GetMessageBoxStandard(
+                    "Error", $"{ex.Message}", ButtonEnum.Ok);
+                await errorBox.ShowAsync();
+            }
+
         }
 
         [RelayCommand]
