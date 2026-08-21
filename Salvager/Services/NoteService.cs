@@ -96,8 +96,6 @@ namespace Salvager.Services
             {
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
-            //Еще - файл нельзя прочитать
-            //Повреждение
             string? targetFile = null;
             foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
             {
