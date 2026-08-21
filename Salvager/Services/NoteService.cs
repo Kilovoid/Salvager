@@ -155,9 +155,17 @@ namespace Salvager.Services
                     var (note, _) = ParseFileContent(content);
                     notesToLoad.Add(note);
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    App.Log($"Can't access file {mdFile} : {ex.Message}");
+                } 
+                catch (FileNotFoundException ex)
+                {
+                    App.Log($"File {mdFile} has not been found {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading {mdFile}: {ex.Message}");
+                    App.Log($"Error loading {mdFile} : {ex.Message}");
                 }
             }
             return notesToLoad;
@@ -166,14 +174,15 @@ namespace Salvager.Services
         public Note LoadNote(Guid noteId)
         {
             ///Выбрасываем ошибку если
-            ///1.Нельзя читать файл или директорию
+            ///1.Нельзя читать файл или директорию (СДЕЛАНО)
             ///2.Пустой переданный id (СДЕЛАНО)
             ///3.Не существует директории (СДЕЛАНО)
             ///4.Не существует файла с данным id (СДЕЛАНО)
             ///5.Не получается запарсить содержимое через ParseFileContent (СДЕЛАНО)
             if (noteId == Guid.Empty)
             {
-                throw new ArgumentNullException("Guid cannot be null", nameof(noteId));
+                //Такое надо пробросить до ViewModel т.к. надо вывести предупреждение
+                throw new ArgumentNullException("Guid cannot be null", nameof(noteId)); 
             }
             if (!Directory.Exists(_notesDirectory))
             {
@@ -190,9 +199,13 @@ namespace Salvager.Services
                         return note;
                     }
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    App.Log($"Can't access the file {filePath} : {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error parsing file {filePath}: {ex.Message}");
+                    App.Log($"Unable to load note {filePath} : {ex.Message}");
                 }
             }
             throw new FileNotFoundException($"Note with ID {noteId} does not exist");

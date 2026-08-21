@@ -24,7 +24,6 @@ namespace Salvager.ViewModels
 
         [ObservableProperty]
         private ObservableCollection<Note> _notes = new();
-        //public ObservableCollection<Note> Notes { get; set; } = new();
 
         [ObservableProperty]
         private bool _sortDescending = true;
@@ -145,13 +144,6 @@ namespace Salvager.ViewModels
                     Notes.Move(currentIndex, i);
                 }
             }
-            //var list = sorted.ToList();
-            //System.Diagnostics.Debug.WriteLine($"Sorted: {list.Count}");
-            //Notes.Clear();
-            //foreach (var note in sorted)
-            //{
-            //    Notes.Add(note);
-            //}
             if (selected != null && Notes.Contains(selected))
             {
                 SelectedNote = selected;
