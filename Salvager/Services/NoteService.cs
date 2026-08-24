@@ -13,7 +13,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Salvager.Services
 {
-    internal class NoteService : INoteService
+    public class NoteService : INoteService
     {
         private readonly string _notesDirectory;
 
@@ -106,7 +106,7 @@ namespace Salvager.Services
                     if (note.Id == noteId)
                     {
                         targetFile = filePath;
-                        return;
+                        break;
                     }
                 }
                 catch (IOException ex)
