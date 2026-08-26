@@ -3,73 +3,65 @@ using Salvager.Services;
 
 namespace Tests
 {
-    public class CrudTests
+    public class CrudTests : IDisposable
     {
-        string _notesDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Salvager",
-                "Notes"
-                );
+        private string _testRoot;
+        private NoteService _service;
+
+        public CrudTests()
+        {
+            _testRoot = Path.Combine(
+                Path.GetTempPath(), "Salvager Tests", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(_testRoot);
+            _service = new NoteService(_testRoot);
+        }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(_testRoot))
+            {
+                Directory.Delete(_testRoot, true);
+            }
+            GC.SuppressFinalize(this);
+        }
 
         [Fact]
         public void CreateNote_Works()
         {
-            var service = new NoteService();
-            var title = "TESTNOTEFORCREATION";
+            var exception = Record.Exception(() => _service.CreateNote($"{Guid.NewGuid}"));
+            Assert.Null(exception);
+        }
 
-            var exception = Record.Exception(() => service.CreateNote(title));
-
+        [Fact]
+        public void DeleteNote_Works()
+        {
+            Guid testGuid = new Guid();
+            var note = _service.CreateNote($"{testGuid}");
+            _service.SaveNote(note);
+            var exception = Record.Exception(() => _service.DeleteNote(note.Id));
             Assert.Null(exception);
         }
 
         [Fact]
         public void SaveNote_File_IsWritten()
         {
-            var service = new NoteService();
-            var title = "TESTNOTEFORSAVING";
-
-            Note testNote = service.CreateNote(title);
-            service.SaveNote(testNote);
-            string fileName = (title + ".md");
-            string testNotePath = Path.Combine(_notesDirectory, fileName);
-            Assert.True(File.Exists(testNotePath), $"File was not created at {_notesDirectory}");
-            if (File.Exists(testNotePath))
-            {
-                File.Delete(testNotePath);
-            }
-        }
-        [Fact]
-        public void DeleteNote_Works()
-        {
-            var service = new NoteService();
-            var title = "TESTNOTEFORDELETION";
-
-            Note testNote = service.CreateNote(title);
-            service.SaveNote(testNote);
-            string testNotePath = Path.Combine(_notesDirectory, (title + ".md"));
-
-            var exception = Record.Exception(() => service.DeleteNote(testNote.Id));
-
-            Assert.Null(exception);
-
-            if (File.Exists(testNotePath))
-            {
-                File.Delete(testNotePath);
-            }
+            Guid testGuid = new Guid();
+            var note = _service.CreateNote($"{testGuid}");
+            _service.SaveNote(note);
+            string fileName = testGuid + ".md";
+            string path = Path.Combine(_testRoot, fileName);
+            Assert.True(File.Exists(path), "File was not saved");
         }
         [Fact]
         public void DeleteNote_File_IsDeleted()
         {
-            var service = new NoteService();
-            var title = "TESTNOTEFORFILEDELETIONPROCESS";
-
-            Note testNote = service.CreateNote(title);
-            service.SaveNote(testNote);
-            string testNotePath = Path.Combine(_notesDirectory, (title + ".md"));
-
-            service.DeleteNote(testNote.Id);
-
-            Assert.True((!File.Exists(testNotePath)), $"The note file is still there in {_notesDirectory}");
+            Guid testGuid = new Guid();
+            var note = _service.CreateNote($"{testGuid}");
+            _service.SaveNote(note);
+            string fileName = testGuid + ".md";
+            string path = Path.Combine(_testRoot, fileName);
+            _service.DeleteNote(note.Id);
+            Assert.False(File.Exists(path), "File was not deleted");
         }
     }
 }

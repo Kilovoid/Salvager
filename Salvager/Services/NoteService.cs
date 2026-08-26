@@ -26,6 +26,20 @@ namespace Salvager.Services
             .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
             .Build();
 
+        public NoteService(string? customDirectory)
+        {
+            _notesDirectory = customDirectory ??
+                Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Salvager",
+                "Notes"
+                );
+            Directory.CreateDirectory(_notesDirectory);
+            MigrateOldFiles();
+        }
+
+        public NoteService() : this(null) { }
+
         private string BuildFileContent(Note note)
         {
             var metadata = new NoteMetadata
@@ -56,16 +70,6 @@ namespace Salvager.Services
             return (note, body);
         }
 
-        public NoteService()
-        {
-            _notesDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Salvager",
-                "Notes"
-                );
-            Directory.CreateDirectory(_notesDirectory);
-            MigrateOldFiles();
-        }
         public Note CreateNote(string title)
         {
 
