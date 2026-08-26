@@ -52,6 +52,7 @@ namespace Tests
             string path = Path.Combine(_testRoot, fileName);
             Assert.True(File.Exists(path), "File was not saved");
         }
+
         [Fact]
         public void DeleteNote_File_IsDeleted()
         {
@@ -62,6 +63,46 @@ namespace Tests
             string path = Path.Combine(_testRoot, fileName);
             _service.DeleteNote(note.Id);
             Assert.False(File.Exists(path), "File was not deleted");
+        }
+
+        //Exception throwing tests for CreateNote
+
+        [Fact]
+        public void CreateNote_Null_Title()
+        {
+            string? title = null;
+
+            Assert.Throws<ArgumentNullException>(() => _service.CreateNote(title));
+        }
+
+        [Fact]
+        public void CreateNote_Blank_Title()
+        {
+            string? title = "";
+
+            Assert.Throws<ArgumentNullException>(() => _service.CreateNote(title));
+        }
+
+        [Fact]
+        public void CreateNote_WhiteSpace_Title()
+        {
+            string? title = " ";
+
+            Assert.Throws<ArgumentException>(() => _service.CreateNote(title));
+        }
+
+        // Тест на форматирование заголовка CreateNote
+
+        [Theory]
+        [InlineData("<><><><>", "________")]
+        [InlineData("<><>aa<>", "____aa__")]
+        public void CreateNote_IsFormatting_FileName(string sampleName, string expected)
+        {
+            string title = sampleName;
+
+            var note = _service.CreateNote(title);
+
+            Assert.Equal(note.Title, expected);
         }
     }
 }
