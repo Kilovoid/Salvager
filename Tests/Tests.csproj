@@ -22,4 +22,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="E:\SalvagerProject\Salvager\Tests\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="E:\SalvagerProject\Salvager\Tests\.editorconfig" />
+  </ItemGroup>
+
 </Project>

@@ -79,7 +79,7 @@ namespace Salvager.Services
             }
             if (string.IsNullOrWhiteSpace(title))
             {
-                throw new ArgumentException("Title cannot be blank", nameof(title));
+                throw new ArgumentNullException("Title cannot be blank", nameof(title));
             }
             char[] invalidChars = Path.GetInvalidFileNameChars();
             foreach (char c in invalidChars)
@@ -223,6 +223,10 @@ namespace Salvager.Services
             if (string.IsNullOrWhiteSpace(currentNote.Title))
             {
                 throw new ArgumentException("Title cannot be blank!", nameof(currentNote));
+            }
+            if (string.IsNullOrEmpty(currentNote.Title))
+            {
+                throw new ArgumentException("Title cannot be empty!", nameof(currentNote));
             }
             if (currentNote.Id == Guid.Empty)
             {
