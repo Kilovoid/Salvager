@@ -30,6 +30,7 @@ public partial class App : Application
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<INoteService, NoteService>();
+        services.AddSingleton<IFileSystem, RealFileSystem>();
 
         var provider = services.BuildServiceProvider();
 

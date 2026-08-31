@@ -17,6 +17,8 @@ namespace Salvager.Services
     {
         private readonly string _notesDirectory;
 
+        private readonly IFileSystem _fileSystem;
+
         private static readonly IDeserializer _deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
@@ -26,19 +28,21 @@ namespace Salvager.Services
             .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
             .Build();
 
-        public NoteService(string? customDirectory)
+        public NoteService(IFileSystem fileSystem, string? customDirectory = null)
         {
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _notesDirectory = customDirectory ??
                 Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 "Salvager",
                 "Notes"
                 );
-            Directory.CreateDirectory(_notesDirectory);
+            _fileSystem.CreateDirectory(_notesDirectory);
             MigrateOldFiles();
         }
 
-        public NoteService() : this(null) { }
+        public NoteService() : this(new RealFileSystem(), null) { }
+        public NoteService(string? customDirectory) : this(new RealFileSystem(), customDirectory) { }
 
         private string BuildFileContent(Note note)
         {
@@ -81,7 +85,7 @@ namespace Salvager.Services
             {
                 throw new ArgumentNullException("Title cannot be blank", nameof(title));
             }
-            char[] invalidChars = Path.GetInvalidFileNameChars();
+            char[] invalidChars = _fileSystem.GetInvalidFileNameChars();
             foreach (char c in invalidChars)
             {
                 title = title.Replace(c, '_');
@@ -112,18 +116,18 @@ namespace Salvager.Services
             string? oldFilePath = FindNoteFileById(currentNote.Id);
             string sanitized = SanitizeName(currentNote.Title);
             string newFileName = sanitized + ".md";
-            string newFilePath = Path.Combine(_notesDirectory, newFileName);
+            string newFilePath = _fileSystem.CombinePath(_notesDirectory, newFileName);
 
             if (oldFilePath != null && oldFilePath != newFilePath)
             {
-                File.Delete(oldFilePath);
+                _fileSystem.DeleteFile(oldFilePath);
             }
 
-            if (File.Exists(newFilePath) && oldFilePath != newFilePath)
+            if (_fileSystem.FileExists(newFilePath) && oldFilePath != newFilePath)
             {
                 newFileName = GetUniqueFileName(sanitized);
-                newFilePath = Path.Combine(_notesDirectory, newFileName);
-                currentNote.Title = Path.GetFileNameWithoutExtension(newFilePath);
+                newFilePath = _fileSystem.CombinePath(_notesDirectory, newFileName);
+                currentNote.Title = _fileSystem.GetFileNameWithoutExtension(newFilePath);
             }
 
             string fileContent = BuildFileContent(currentNote);
@@ -141,11 +145,11 @@ namespace Salvager.Services
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
             string? targetFile = null;
-            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            foreach (string filePath in _fileSystem.GetFiles(_notesDirectory, "*.md"))
             {
                 try
                 {
-                    string content = File.ReadAllText(filePath);
+                    string content = _fileSystem.ReadAllText(filePath);
                     var (note, _) = ParseFileContent(content);
                     if (note.Id == noteId)
                     {
@@ -171,7 +175,7 @@ namespace Salvager.Services
             
             try
             {
-                File.Delete(targetFile);
+                _fileSystem.DeleteFile(targetFile);
             }
             catch (IOException ex)
             {
@@ -188,18 +192,18 @@ namespace Salvager.Services
         public List<Note> LoadAll()
         {
             List<Note> notesToLoad = new List<Note>();
-            if (!Directory.Exists(_notesDirectory))
+            if (!_fileSystem.DirectoryExists(_notesDirectory))
             {
-                Directory.CreateDirectory(_notesDirectory);
+                _fileSystem.CreateDirectory(_notesDirectory);
                 return new List<Note>();
             }
 
-            string[] mdFiles = Directory.GetFiles(_notesDirectory, "*.md");
+            string[] mdFiles = _fileSystem.GetFiles(_notesDirectory, "*.md");
             foreach (string mdFile in mdFiles)
             {
                 try
                 {
-                    string content = File.ReadAllText(mdFile);
+                    string content = _fileSystem.ReadAllText(mdFile);
                     var (note, _) = ParseFileContent(content);
                     notesToLoad.Add(note);
                 }
@@ -221,26 +225,19 @@ namespace Salvager.Services
 
         public Note LoadNote(Guid noteId)
         {
-            ///Выбрасываем ошибку если
-            ///1.Нельзя читать файл или директорию (СДЕЛАНО)
-            ///2.Пустой переданный id (СДЕЛАНО)
-            ///3.Не существует директории (СДЕЛАНО)
-            ///4.Не существует файла с данным id (СДЕЛАНО)
-            ///5.Не получается запарсить содержимое через ParseFileContent (СДЕЛАНО)
             if (noteId == Guid.Empty)
             {
-                //Такое надо пробросить до ViewModel т.к. надо вывести предупреждение
                 throw new ArgumentNullException("Guid cannot be null", nameof(noteId)); 
             }
-            if (!Directory.Exists(_notesDirectory))
+            if (!_fileSystem.DirectoryExists(_notesDirectory))
             {
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
-            foreach(string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            foreach(string filePath in _fileSystem.GetFiles(_notesDirectory, "*.md"))
             {
                 try
                 {
-                    string content = File.ReadAllText(filePath);
+                    string content = _fileSystem.ReadAllText(filePath);
                     var (note, _) = ParseFileContent(content);
                     if (note.Id == noteId)
                     {
@@ -261,7 +258,7 @@ namespace Salvager.Services
 
         private string SanitizeName(string title)
         {
-            foreach (char c in Path.GetInvalidFileNameChars())
+            foreach (char c in _fileSystem.GetInvalidFileNameChars())
             {
                 title = title.Replace(c, '_');
             }
@@ -270,11 +267,11 @@ namespace Salvager.Services
 
         private string? FindNoteFileById(Guid noteId)
         {
-            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            foreach (string filePath in _fileSystem.GetFiles(_notesDirectory, "*.md"))
             {
                 try
                 {
-                    string content = File.ReadAllText(filePath);
+                    string content = _fileSystem.ReadAllText(filePath);
                     var (note, _) = ParseFileContent(content);
                     if (note.Id == noteId)
                     {
@@ -290,7 +287,7 @@ namespace Salvager.Services
         {
             try
             {
-                string content = File.ReadAllText(filePath);
+                string content = _fileSystem.ReadAllText(filePath);
                 var (note, _) = ParseFileContent(content);
                 return note;
             }
@@ -299,9 +296,9 @@ namespace Salvager.Services
 
         private void MigrateOldFiles()
         {
-            foreach (string filePath in Directory.GetFiles(_notesDirectory, "*.md"))
+            foreach (string filePath in _fileSystem.GetFiles(_notesDirectory, "*.md"))
             {
-                string content = File.ReadAllText(filePath);
+                string content = _fileSystem.ReadAllText(filePath);
                 if (content.TrimStart().StartsWith("---"))
                 {
                     continue;
@@ -313,7 +310,7 @@ namespace Salvager.Services
                 var note = new Note(Guid.NewGuid(), title, body, DateTime.Now, DateTime.Now);
                 string newContent = BuildFileContent(note);
 
-                File.WriteAllText(filePath, newContent, Encoding.UTF8);
+                _fileSystem.WriteAllText(filePath, newContent, Encoding.UTF8);
             }
         }
 
@@ -321,7 +318,7 @@ namespace Salvager.Services
         {
             int counter = 1;
             string candidate = baseName;
-            while (File.Exists(Path.Combine(_notesDirectory, candidate+".md")))
+            while (_fileSystem.FileExists(_fileSystem.CombinePath(_notesDirectory, candidate+".md")))
             {
                 candidate = $"{baseName} ({counter++})";
             }

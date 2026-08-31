@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Salvager.Models
+namespace Salvager.Services
 {
-    internal interface IFileSystem
+    public interface IFileSystem
     {
         bool DirectoryExists(string path);
         bool FileExists(string path);
@@ -13,5 +13,8 @@ namespace Salvager.Models
         string ReadAllText(string path);
         void CreateDirectory(string path);
         void DeleteFile(string path);
+        string CombinePath(string path1, string path2);
+        string GetFileNameWithoutExtension(string path);
+        char[] GetInvalidFileNameChars();
     }
 }
