@@ -176,10 +176,12 @@ namespace Salvager.Services
             catch (IOException ex)
             {
                 App.Log($"Failed to delete file {targetFile} : {ex.Message}");
+                throw;
             }
             catch (UnauthorizedAccessException ex)
             {
                 App.Log($"Access denied to file {targetFile} : {ex.Message}");
+                throw;
             }
         }
 
