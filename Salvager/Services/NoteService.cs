@@ -140,7 +140,7 @@ namespace Salvager.Services
             {
                 throw new ArgumentNullException($"Id ({noteId}) cannot be null!");
             }
-            if (!Directory.Exists(_notesDirectory))
+            if (!_fileSystem.DirectoryExists(_notesDirectory))
             {
                 throw new DirectoryNotFoundException($"Directory {_notesDirectory} does not exist");
             }
