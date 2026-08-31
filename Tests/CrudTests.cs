@@ -220,5 +220,62 @@ namespace Tests
             _service.DeleteNote(note.Id);
             Assert.False(File.Exists(path), "File was not deleted");
         }
+
+        [Fact]
+        public void DeleteNote_NullGuid()
+        {
+            Guid noteId = Guid.Empty;
+
+            Assert.Throws<ArgumentNullException>(() => _service.DeleteNote(noteId));
+        }
+
+        [Fact]
+        public void DeleteNote_FileIsNull()
+        {
+            Guid noteId = Guid.NewGuid();
+
+            Assert.Throws<FileNotFoundException>(() => _service.DeleteNote(noteId));
+        }
+
+        [Fact]
+        public void DeleteNote_WhenFileIsLocked_ThrowsIOException()
+        {
+            string noteName = Guid.NewGuid().ToString();
+            var note = new Note(noteName, "");
+
+            _service.SaveNote(note);
+            var filePath = Path.Combine(_testRoot, $"{noteName}.md");
+            using var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+            Assert.Throws<IOException>(() => _service.DeleteNote(note.Id));
+        }
+
+        [Fact]
+        public void DeleteNote_NoFrontmatter_ThrowsInvalidDataException()
+        {
+            string noteName = Guid.NewGuid().ToString();
+            var note = new Note(noteName, "");
+
+            _service.SaveNote(note);
+
+            var filePath = Path.Combine(_testRoot, $"{noteName}.md");
+            File.WriteAllText(filePath, "INVALID TEXT");
+
+            Assert.Throws<InvalidDataException>(() => _service.DeleteNote(note.Id));
+        }
+
+        [Fact]
+        public void DeleteNote_DirectoryDoesNotExist_ThrowsDirectoryNotFoundException()
+        {
+            var testDirectory = Path.Combine(_testRoot, Guid.NewGuid().ToString());
+            var testService = new NoteService(testDirectory);
+
+            if (Directory.Exists(testDirectory))
+            {
+                Directory.Delete(testDirectory);
+            }
+
+            Assert.Throws<DirectoryNotFoundException>(() => testService.DeleteNote(Guid.NewGuid()));
+        }
     }
 }

@@ -90,6 +90,46 @@ namespace Salvager.Services
             return newNote;
         }
 
+        public void SaveNote(Note currentNote)
+        {
+            if (currentNote == null)
+            {
+                throw new ArgumentNullException(nameof(currentNote));
+            }
+            if (string.IsNullOrWhiteSpace(currentNote.Title))
+            {
+                throw new ArgumentException("Title cannot be blank!", nameof(currentNote));
+            }
+            if (string.IsNullOrEmpty(currentNote.Title))
+            {
+                throw new ArgumentException("Title cannot be empty!", nameof(currentNote));
+            }
+            if (currentNote.Id == Guid.Empty)
+            {
+                currentNote.Id = Guid.NewGuid();
+            }
+            currentNote.UpdatedAt = DateTime.Now;
+            string? oldFilePath = FindNoteFileById(currentNote.Id);
+            string sanitized = SanitizeName(currentNote.Title);
+            string newFileName = sanitized + ".md";
+            string newFilePath = Path.Combine(_notesDirectory, newFileName);
+
+            if (oldFilePath != null && oldFilePath != newFilePath)
+            {
+                File.Delete(oldFilePath);
+            }
+
+            if (File.Exists(newFilePath) && oldFilePath != newFilePath)
+            {
+                newFileName = GetUniqueFileName(sanitized);
+                newFilePath = Path.Combine(_notesDirectory, newFileName);
+                currentNote.Title = Path.GetFileNameWithoutExtension(newFilePath);
+            }
+
+            string fileContent = BuildFileContent(currentNote);
+            File.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+        }
+
         public void DeleteNote(Guid noteId)
         {
             if (noteId == Guid.Empty)
@@ -116,10 +156,12 @@ namespace Salvager.Services
                 catch (IOException ex)
                 {
                     App.Log($"Cannot read file {filePath}: {ex.Message}");
+                    throw;
                 }
                 catch (InvalidDataException ex)
                 {
                     App.Log($"Invalid format in file {filePath}: {ex.Message}");
+                    throw;
                 }
             }
             if (targetFile == null)
@@ -213,45 +255,6 @@ namespace Salvager.Services
                 }
             }
             throw new FileNotFoundException($"Note with ID {noteId} does not exist");
-        }
-        public void SaveNote(Note currentNote)
-        {
-            if (currentNote == null)
-            {
-                throw new ArgumentNullException(nameof(currentNote));
-            }
-            if (string.IsNullOrWhiteSpace(currentNote.Title))
-            {
-                throw new ArgumentException("Title cannot be blank!", nameof(currentNote));
-            }
-            if (string.IsNullOrEmpty(currentNote.Title))
-            {
-                throw new ArgumentException("Title cannot be empty!", nameof(currentNote));
-            }
-            if (currentNote.Id == Guid.Empty)
-            {
-                currentNote.Id = Guid.NewGuid();
-            }
-            currentNote.UpdatedAt = DateTime.Now;
-            string? oldFilePath = FindNoteFileById(currentNote.Id);
-            string sanitized = SanitizeName(currentNote.Title);
-            string newFileName = sanitized + ".md";
-            string newFilePath = Path.Combine(_notesDirectory, newFileName);
-
-            if (oldFilePath != null && oldFilePath != newFilePath)
-            {
-                File.Delete(oldFilePath);
-            }
-
-            if (File.Exists(newFilePath) && oldFilePath != newFilePath)
-            {
-                newFileName = GetUniqueFileName(sanitized);
-                newFilePath = Path.Combine(_notesDirectory, newFileName);
-                currentNote.Title = Path.GetFileNameWithoutExtension(newFilePath);
-            }
-
-            string fileContent = BuildFileContent(currentNote);
-            File.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
         }
 
         private string SanitizeName(string title)
