@@ -131,7 +131,7 @@ namespace Salvager.Services
             }
 
             string fileContent = BuildFileContent(currentNote);
-            File.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+            _fileSystem.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
         }
 
         public void DeleteNote(Guid noteId)

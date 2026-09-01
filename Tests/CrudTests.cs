@@ -1,37 +1,37 @@
-﻿using Salvager.Models;
+﻿using Moq;
+using Salvager.Models;
 using Salvager.Services;
-using SkiaSharp;
+using System.Text;
 
 namespace Tests
 {
-    public class CrudTests : IDisposable
+    public class CrudTests
     {
-        private readonly string _testRoot;
+        private readonly Mock<IFileSystem> _mockFileSystem;
         private readonly NoteService _service;
+        private readonly string _testRoot = @"C:\test\notes";
 
         public CrudTests()
         {
-            _testRoot = Path.Combine(
-                Path.GetTempPath(), "Salvager Tests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testRoot);
-            _service = new NoteService(_testRoot);
-        }
+            _mockFileSystem = new Mock<IFileSystem>();
 
-        public void Dispose()
-        {
-            try
-            {
-                if (Directory.Exists(_testRoot))
-                {
-                    Directory.Delete(_testRoot, true);
-                    Console.WriteLine($"DELETED!!!! {_testRoot}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FAILED TO DELETE!!!! {_testRoot} : {ex.Message}");
-                File.WriteAllText(Path.Combine(Path.GetTempPath(), "dispose_error.txt"), ex.ToString());
-            }
+            _mockFileSystem.Setup(fileSys => fileSys
+            .CombinePath(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns<string, string>((a, b) => Path.Combine(a, b));
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .DirectoryExists(It.IsAny<string>()))
+                .Returns(true);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Array.Empty<string>());
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetInvalidFileNameChars())
+                .Returns(Path.GetInvalidFileNameChars());
+
+            _service = new NoteService(_mockFileSystem.Object, _testRoot);
         }
 
         //!!CreateNote Tests!!
@@ -70,9 +70,15 @@ namespace Tests
         public void SaveNote_Works()
         {
             var currentNote = new Note($"{Guid.NewGuid()}", "");
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(It.IsAny<string>()))
+                .Returns(false);
+
             var exception = Record.Exception(() => _service.SaveNote(currentNote));
 
             Assert.Null(exception);
+            _mockFileSystem.Verify(fileSys => fileSys
+            .WriteAllText(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Encoding>()), Times.Once);
         }
 
         [Fact]
@@ -96,18 +102,27 @@ namespace Tests
         public void SaveNote_File_IsWritten()
         {
             var currentNote = new Note($"{Guid.NewGuid()}", "");
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(It.IsAny<string>()))
+                .Returns(false);
+
             _service.SaveNote(currentNote);
-            string fileName = currentNote.Title + ".md";
-            string path = Path.Combine(_testRoot, fileName);
-            Assert.True(File.Exists(path), "File was not saved");
+
+            _mockFileSystem.Verify(fileSys => fileSys
+            .WriteAllText(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Encoding>()),
+            Times.Once);
         }
 
         [Fact]
         public void SaveNote_GeneratesId_OnNull()
         {
             var currentNote = new Note(Guid.Empty, $"{Guid.NewGuid()}", "", DateTime.Now, DateTime.Now);
-            _service.SaveNote(currentNote);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(It.IsAny<string>()))
+                .Returns(false);
 
+            _service.SaveNote(currentNote);
             Assert.NotEqual(Guid.Empty, currentNote.Id);
         }
 
@@ -115,6 +130,11 @@ namespace Tests
         public void SaveNote_UpdatesTime()
         {
             var currentNote = new Note(Guid.NewGuid(), $"{Guid.NewGuid()}", "", DateTime.Now, DateTime.Now);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(It.IsAny<string>()))
+                .Returns(false);
+
             var oldUpdateDate = currentNote.UpdatedAt;
 
             Thread.Sleep(10);
@@ -128,19 +148,44 @@ namespace Tests
         public void SaveNote_WhenTitleChanges_CreatesNewDeletesOld()
         {
             var currentNote = new Note(Guid.NewGuid(), $"{Guid.NewGuid()}", "", DateTime.Now, DateTime.Now);
+
+            string oldName = currentNote.Title;
+            string oldPath = @"C:\test\notes\" + oldName + ".md";
+            string newName = "TestForNameUpdate";
+            string newPath = @"C:\test\notes\" + newName + ".md";
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(oldPath)).Returns(false);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(_testRoot, "*.md")).Returns(Array.Empty<string>());
+
             _service.SaveNote(currentNote);
-            string fileName = currentNote.Title + ".md";
-            string oldPath = Path.Combine(_testRoot, fileName);
-            Assert.True(File.Exists(oldPath));
 
-            currentNote.Title = "TESTFORTITLECHANGE";
+            currentNote.Title = newName;
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(oldPath)).Returns(true);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(newPath)).Returns(false);
+
+            string fileContent = $"---\nid: {currentNote.Id}\ntitle: {currentNote.Title}" +
+                $"\n---\n\n";
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(_testRoot, "*.md"))
+                .Returns([oldPath]);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .ReadAllText(oldPath))
+                .Returns(fileContent);
+
             _service.SaveNote(currentNote);
 
-            Assert.False(File.Exists(oldPath));
+            _mockFileSystem.Verify(fileSys => fileSys
+            .DeleteFile(oldPath), Times.Once);
 
-            string newFileName = currentNote.Title + ".md";
-            string newPath = Path.Combine(_testRoot, newFileName);
-            Assert.True(File.Exists(newPath));
+            _mockFileSystem.Verify(fileSys => fileSys
+            .WriteAllText(It.Is<string>(p => p.Contains("TestForNameUpdate")),
+            It.IsAny<string>(), It.IsAny<Encoding>()),
+            Times.Once);
         }
 
         [Fact]
@@ -150,16 +195,34 @@ namespace Tests
             var note1 = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
             var note2 = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
 
+            //_service.SaveNote(note1);
+            //_service.SaveNote(note2);
+
+            string path1 = @"C:\test\notes\" + sameName + ".md";
+            string path2 = @"C:\test\notes\" + sameName + " (1).md";
+
+            _mockFileSystem.Setup(fs => fs.FileExists(path1)).Returns(true);   // первый файл существует
+            _mockFileSystem.Setup(fs => fs.FileExists(path2)).Returns(false);  // второго ещё нет
+            _mockFileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p != path1 && p != path2)))
+                .Returns(false);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(_testRoot, "*.md")).Returns([path1]);
+
+            string fileContent1 = $"---\nid: {note1.Id}\ntitle: {note1.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .ReadAllText(path1)).Returns(fileContent1);
+
             _service.SaveNote(note1);
             _service.SaveNote(note2);
 
-            string path1 = Path.Combine(_testRoot, $"{sameName}.md");
-            string path2 = Path.Combine(_testRoot, $"{sameName} (1).md");
-
-            Assert.True(File.Exists(path1));
-            Assert.True(File.Exists(path2));
-
             Assert.Equal($"{sameName} (1)", note2.Title);
+
+            _mockFileSystem.Verify(fileSys => fileSys
+            .WriteAllText(
+                It.Is<string>(p => p.Contains(" (1)")),
+                It.IsAny<string>(),
+                It.IsAny<Encoding>()), Times.Once);
         }
 
         [Fact]
@@ -240,11 +303,10 @@ namespace Tests
         [Fact]
         public void DeleteNote_WhenFileIsLocked_ThrowsIOException()
         {
-            string noteName = Guid.NewGuid().ToString();
-            var note = new Note(noteName, "");
+            var note = new Note($"{Guid.NewGuid()}", "");
 
             _service.SaveNote(note);
-            var filePath = Path.Combine(_testRoot, $"{noteName}.md");
+            var filePath = Path.Combine(_testRoot, $"{note.Title}.md");
             using var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
 
             Assert.Throws<IOException>(() => _service.DeleteNote(note.Id));
