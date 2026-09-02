@@ -191,38 +191,58 @@ namespace Tests
         [Fact]
         public void SaveNote_AddsSuffix()
         {
-            string sameName = Guid.NewGuid().ToString();
-            var note1 = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
-            var note2 = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
+            string sameName = "SameName";
 
-            //_service.SaveNote(note1);
-            //_service.SaveNote(note2);
+            var oldNote = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
+            var newNote = new Note(Guid.NewGuid(), sameName, "", DateTime.Now, DateTime.Now);
 
-            string path1 = @"C:\test\notes\" + sameName + ".md";
-            string path2 = @"C:\test\notes\" + sameName + " (1).md";
-
-            _mockFileSystem.Setup(fs => fs.FileExists(path1)).Returns(true);   // первый файл существует
-            _mockFileSystem.Setup(fs => fs.FileExists(path2)).Returns(false);  // второго ещё нет
-            _mockFileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p != path1 && p != path2)))
-                .Returns(false);
-            _mockFileSystem.Setup(fileSys => fileSys
-            .GetFiles(_testRoot, "*.md")).Returns([path1]);
-
-            string fileContent1 = $"---\nid: {note1.Id}\ntitle: {note1.Title}\n---\n\n";
+            string oldPath = _mockFileSystem.Object.CombinePath(_testRoot, $"{sameName}.md");
+            string newPath = _mockFileSystem.Object.CombinePath(_testRoot, $"{sameName} (1).md");
 
             _mockFileSystem.Setup(fileSys => fileSys
-            .ReadAllText(path1)).Returns(fileContent1);
+            .FileExists(It.IsAny<string>())).Returns(false);
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(_testRoot, "*.md")).Returns(Array.Empty<string>());
 
-            _service.SaveNote(note1);
-            _service.SaveNote(note2);
+            _service.SaveNote(oldNote);
 
-            Assert.Equal($"{sameName} (1)", note2.Title);
+            string oldFileContent = $"---\nid: {oldNote.Id}\ntitle: {oldNote.Title}" +
+                $"\n---\n\n";
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFiles(_testRoot, "*.md")).Returns([oldPath]);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .ReadAllText(oldPath)).Returns(oldFileContent);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(oldPath)).Returns(true);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .FileExists(newPath)).Returns(false);
+
+            _mockFileSystem.Setup(fileSys => fileSys
+            .GetFileNameWithoutExtension(It.IsAny<string>()))
+                .Returns<string>(Path.GetFileNameWithoutExtension);
+
+            _service.SaveNote(newNote);
+
+            _mockFileSystem.Verify(fileSys => fileSys
+            .DeleteFile(oldPath), Times.Never);
 
             _mockFileSystem.Verify(fileSys => fileSys
             .WriteAllText(
-                It.Is<string>(p => p.Contains(" (1)")),
+                It.Is<string>(path => path == oldPath),
                 It.IsAny<string>(),
                 It.IsAny<Encoding>()), Times.Once);
+
+            _mockFileSystem.Verify(fileSys => fileSys
+            .WriteAllText(
+                It.Is<string>(path => path.Contains("(1)")),
+                It.IsAny<string>(),
+                It.IsAny<Encoding>()), Times.Once);
+
+            Assert.Equal($"{sameName} (1)", newNote.Title);
         }
 
         [Fact]
