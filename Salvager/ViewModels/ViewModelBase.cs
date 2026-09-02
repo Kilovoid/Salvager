@@ -1,7 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Salvager.ViewModels;
-
-public abstract class ViewModelBase : ObservableObject
+namespace Salvager.ViewModels
 {
+    public partial class ViewModelBase : ObservableObject
+    {
+    }
 }
