@@ -8,12 +8,16 @@ namespace Tests
     public class CrudTests
     {
         private readonly Mock<IFileSystem> _mockFileSystem;
+
+        private readonly Mock<ILogger> _mockLogger;
         private readonly NoteService _service;
         private readonly string _testRoot = @"C:\test\notes";
 
         public CrudTests()
         {
             _mockFileSystem = new Mock<IFileSystem>();
+
+            _mockLogger = new Mock<ILogger>();
 
             _mockFileSystem.Setup(fs => fs
             .CombinePath(It.IsAny<string>(), It.IsAny<string>()))
@@ -31,7 +35,7 @@ namespace Tests
             .GetInvalidFileNameChars())
                 .Returns(Path.GetInvalidFileNameChars());
 
-            _service = new NoteService(_mockFileSystem.Object, _testRoot);
+            _service = new NoteService(_mockFileSystem.Object, _mockLogger.Object, _testRoot);
         }
 
         //!!CreateNote Tests!!
@@ -400,6 +404,68 @@ namespace Tests
             .ReadAllText(It.IsAny<string>()), Times.Exactly(2));
             _mockFileSystem.Verify(fs => fs
             .DeleteFile(It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public void DeleteNote_InvalidData_StillDeletesValidFile()
+        {
+            var badNote = new Note(Guid.NewGuid(), "Bad Note", "", DateTime.Now, DateTime.Now);
+            var goodNote = new Note(Guid.NewGuid(), "Good Note", "", DateTime.Now, DateTime.Now);
+
+            string badPath = Path.Combine(_testRoot, $"{badNote.Title}.md");
+            string goodPath = Path.Combine(_testRoot, $"{goodNote.Title}.md");
+
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([badPath, goodPath]);
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+
+            string goodFileContent = $"---\nid: {goodNote.Id}\ntitle: {goodNote.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(badPath)).Throws<InvalidDataException>();
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(goodPath)).Returns(goodFileContent);
+
+            _service.DeleteNote(goodNote.Id);
+
+            _mockFileSystem.Verify(fs => fs
+            .ReadAllText(It.IsAny<string>()), Times.Exactly(2));
+            _mockFileSystem.Verify(fs => fs
+            .DeleteFile(It.IsAny<string>()), Times.Once);
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(typeof(IOException))]
+        [InlineData(typeof(UnauthorizedAccessException))]
+        public void DeleteNote_MarkedFileCantBeDeleted_IsNotDeleted(Type exception)
+        {
+            Guid noteGuid = Guid.NewGuid();
+            string noteName = Guid.NewGuid().ToString();
+            var note = new Note(noteGuid, noteName, "", DateTime.Now, DateTime.Now);
+
+            string path = Path.Combine(_testRoot, $"{noteName}.md");
+
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(path)).Returns(true);
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([path]);
+            
+            string fileContent = $"---\nid: {note.Id}\ntitle: {note.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path)).Returns(fileContent);
+
+            var expectedException = (Exception)Activator.CreateInstance(exception);
+            _mockFileSystem.Setup(fs => fs
+            .DeleteFile(path)).Throws(expectedException);
+
+            Assert.Throws(exception, () => _service.DeleteNote(note.Id));
+
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Once);
         }
     }
 }

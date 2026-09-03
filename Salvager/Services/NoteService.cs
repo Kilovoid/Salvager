@@ -19,6 +19,8 @@ namespace Salvager.Services
 
         private readonly IFileSystem _fileSystem;
 
+        private readonly ILogger _logger;
+
         private static readonly IDeserializer _deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
@@ -30,6 +32,20 @@ namespace Salvager.Services
 
         public NoteService(IFileSystem fileSystem, string? customDirectory = null)
         {
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _notesDirectory = customDirectory ??
+                Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Salvager",
+                "Notes"
+                );
+            _fileSystem.CreateDirectory(_notesDirectory);
+            MigrateOldFiles();
+        }
+
+        public NoteService(IFileSystem fileSystem, ILogger logger, string? customDirectory = null)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             _notesDirectory = customDirectory ??
                 Path.Combine(
@@ -159,12 +175,12 @@ namespace Salvager.Services
                 }
                 catch (IOException ex)
                 {
-                    App.Log($"Cannot read file {filePath}: {ex.Message}");
+                    _logger.Log($"Cannot read file {filePath}: {ex.Message}");
                     continue;
                 }
                 catch (InvalidDataException ex)
                 {
-                    App.Log($"Invalid format in file {filePath}: {ex.Message}");
+                    _logger.Log($"Invalid format in file {filePath}: {ex.Message}");
                     continue;
                 }
             }
@@ -179,12 +195,12 @@ namespace Salvager.Services
             }
             catch (IOException ex)
             {
-                App.Log($"Failed to delete file {targetFile} : {ex.Message}");
+                _logger.Log($"Failed to delete file {targetFile} : {ex.Message}");
                 throw;
             }
             catch (UnauthorizedAccessException ex)
             {
-                App.Log($"Access denied to file {targetFile} : {ex.Message}");
+                _logger.Log($"Access denied to file {targetFile} : {ex.Message}");
                 throw;
             }
         }
@@ -209,15 +225,15 @@ namespace Salvager.Services
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    App.Log($"Can't access file {mdFile} : {ex.Message}");
+                    _logger.Log($"Can't access file {mdFile} : {ex.Message}");
                 } 
                 catch (FileNotFoundException ex)
                 {
-                    App.Log($"File {mdFile} has not been found {ex.Message}");
+                    _logger.Log($"File {mdFile} has not been found {ex.Message}");
                 }
                 catch (Exception ex)
                 {
-                    App.Log($"Error loading {mdFile} : {ex.Message}");
+                    _logger.Log($"Error loading {mdFile} : {ex.Message}");
                 }
             }
             return notesToLoad;
@@ -246,11 +262,11 @@ namespace Salvager.Services
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    App.Log($"Can't access the file {filePath} : {ex.Message}");
+                    _logger.Log($"Can't access the file {filePath} : {ex.Message}");
                 }
                 catch (Exception ex)
                 {
-                    App.Log($"Unable to load note {filePath} : {ex.Message}");
+                    _logger.Log($"Unable to load note {filePath} : {ex.Message}");
                 }
             }
             throw new FileNotFoundException($"Note with ID {noteId} does not exist");
