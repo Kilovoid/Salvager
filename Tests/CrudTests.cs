@@ -334,21 +334,27 @@ namespace Tests
         [Fact]
         public void DeleteNote_Works()
         {
-            var note = new Note($"{Guid.NewGuid()}", "");
-            _service.SaveNote(note);
-            var exception = Record.Exception(() => _service.DeleteNote(note.Id));
-            Assert.Null(exception);
-        }
+            string noteName = Guid.NewGuid().ToString();
+            Guid noteGuid = Guid.NewGuid();
+            var note = new Note(noteGuid, noteName, "", DateTime.Now, DateTime.Now);
 
-        [Fact]
-        public void DeleteNote_File_IsDeleted()
-        {
-            var note = new Note($"{Guid.NewGuid()}", "");
-            _service.SaveNote(note);
-            string fileName = note.Title + ".md";
-            string path = Path.Combine(_testRoot, fileName);
+            string path = Path.Combine(_testRoot, $"{noteName}.md");
+
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([path]);
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+
+            string fileContent = $"---\nid: {note.Id}\ntitle: {note.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path)).Returns(fileContent);
+
             _service.DeleteNote(note.Id);
-            Assert.False(File.Exists(path), "File was not deleted");
+
+            _mockFileSystem.Verify(fs => fs
+            .DeleteFile(It.IsAny<string>()), Times.Once);
+            
         }
 
         [Fact]
