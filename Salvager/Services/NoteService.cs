@@ -160,12 +160,12 @@ namespace Salvager.Services
                 catch (IOException ex)
                 {
                     App.Log($"Cannot read file {filePath}: {ex.Message}");
-                    throw;
+                    continue;
                 }
                 catch (InvalidDataException ex)
                 {
                     App.Log($"Invalid format in file {filePath}: {ex.Message}");
-                    throw;
+                    continue;
                 }
             }
             if (targetFile == null)
