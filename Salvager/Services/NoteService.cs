@@ -39,7 +39,8 @@ namespace Salvager.Services
                 "Salvager",
                 "Notes"
                 );
-            _fileSystem.CreateDirectory(_notesDirectory);
+            if (!_fileSystem.DirectoryExists(_notesDirectory))
+                _fileSystem.CreateDirectory(_notesDirectory);
             MigrateOldFiles();
         }
 
@@ -53,7 +54,8 @@ namespace Salvager.Services
                 "Salvager",
                 "Notes"
                 );
-            _fileSystem.CreateDirectory(_notesDirectory);
+            if (!_fileSystem.DirectoryExists(_notesDirectory))
+                _fileSystem.CreateDirectory(_notesDirectory);
             MigrateOldFiles();
         }
 
@@ -226,14 +228,17 @@ namespace Salvager.Services
                 catch (UnauthorizedAccessException ex)
                 {
                     _logger.Log($"Can't access file {mdFile} : {ex.Message}");
+                    continue;
                 } 
                 catch (FileNotFoundException ex)
                 {
                     _logger.Log($"File {mdFile} has not been found {ex.Message}");
+                    continue;
                 }
                 catch (Exception ex)
                 {
                     _logger.Log($"Error loading {mdFile} : {ex.Message}");
+                    continue;
                 }
             }
             return notesToLoad;

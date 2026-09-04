@@ -467,5 +467,87 @@ namespace Tests
             _mockLogger.Verify(log => log
             .Log(It.IsAny<string>()), Times.Once);
         }
+
+        //!!LoadAll Tests!!
+
+        [Fact]
+        public void LoadAll_Works()
+        {
+            var note1 = new Note(Guid.NewGuid(), "note1", "", DateTime.Now, DateTime.Now);
+            var note2 = new Note(Guid.NewGuid(), "note2", "", DateTime.Now, DateTime.Now);
+
+            string path1 = Path.Combine(_testRoot, $"{note1.Title}.md");
+            string path2 = Path.Combine(_testRoot, $"{note2.Title}.md");
+
+            string file1Content = $"---\nid: {note1.Id}\ntitle: {note1.Title}\n---\n\n";
+            string file2Content = $"---\nid: {note2.Id}\ntitle: {note2.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([path1, path2]);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path1)).Returns(file1Content);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path2)).Returns(file2Content);
+
+            List<Note> testNotes = _service.LoadAll();
+
+            _mockFileSystem.Verify(fs => fs
+            .GetFiles(_testRoot, "*.md"), Times.Exactly(2)); //MigrateFiles тоже вызывает GetFiles
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Never);
+            Assert.Equal(2, testNotes.Count);
+        }
+
+        [Fact]
+        public void LoadAll_CreatesNewDirectory_IfDoesNotExist()
+        {
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(true);
+
+            var service = new NoteService(_mockFileSystem.Object, _testRoot);
+
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(false);
+
+            service.LoadAll();
+
+            _mockFileSystem.Verify(fs => fs
+            .CreateDirectory(It.IsAny<string>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedAccessException))]
+        [InlineData(typeof(FileNotFoundException))]
+        [InlineData(typeof(Exception))]
+        public void LoadAll_StillReadsAfterInvalidFiles_Logs(Type exception)
+        {
+            var badNote = new Note(Guid.NewGuid(), "Bad Note", "", DateTime.Now, DateTime.Now);
+            var goodNote = new Note(Guid.NewGuid(), "Good Note", "", DateTime.Now, DateTime.Now);
+
+            string goodPath = Path.Combine(_testRoot, $"{goodNote.Title}.md");
+            string badPath = Path.Combine(_testRoot, $"{badNote.Title}.md");
+
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([badPath, goodPath]);
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+
+            string goodFileContent = $"---\nid: {goodNote.Id}\ntitle: {goodNote.Title}\n---\n\n";
+            var expectedException = (Exception)Activator.CreateInstance(exception);
+
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(badPath)).Throws(expectedException);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(goodPath)).Returns(goodFileContent);
+
+            _service.LoadAll();
+
+            _mockFileSystem.Verify(fs => fs
+            .ReadAllText(It.IsAny<string>()), Times.Exactly(2));
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Once);
+        }
     }
 }
