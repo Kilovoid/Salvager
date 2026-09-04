@@ -378,6 +378,21 @@ namespace Tests
         }
 
         [Fact]
+        public void DeleteNote_DirectoryDoesNotExist_ThrowsException()
+        {
+            Guid anyGuid = Guid.NewGuid();
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(true);
+
+            var service = new NoteService(_mockFileSystem.Object, _testRoot);
+
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(false);
+
+            Assert.Throws<DirectoryNotFoundException>(() => service.DeleteNote(anyGuid));
+        }
+
+        [Fact]
         public void DeleteNote_DirectoryHasBadFile_StillDeletesValidFile()
         {
             var badNote = new Note(Guid.NewGuid(), "Bad Note", "", DateTime.Now, DateTime.Now);
@@ -549,5 +564,8 @@ namespace Tests
             _mockLogger.Verify(log => log
             .Log(It.IsAny<string>()), Times.Once);
         }
+
+        //!LoadNote Tests!!
+
     }
 }
