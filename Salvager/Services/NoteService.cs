@@ -268,10 +268,12 @@ namespace Salvager.Services
                 catch (UnauthorizedAccessException ex)
                 {
                     _logger.Log($"Can't access the file {filePath} : {ex.Message}");
+                    continue;
                 }
                 catch (Exception ex)
                 {
                     _logger.Log($"Unable to load note {filePath} : {ex.Message}");
+                    continue;
                 }
             }
             throw new FileNotFoundException($"Note with ID {noteId} does not exist");

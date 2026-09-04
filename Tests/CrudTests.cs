@@ -567,5 +567,101 @@ namespace Tests
 
         //!LoadNote Tests!!
 
+        [Fact]
+        public void LoadNote_Works()
+        {
+            var noteToLoad = new Note(Guid.NewGuid(), "note1", "", DateTime.Now, DateTime.Now);
+            var note2 = new Note(Guid.NewGuid(), "note2", "", DateTime.Now, DateTime.Now);
+
+            string path1 = Path.Combine(_testRoot, $"{noteToLoad.Title}.md");
+            string path2 = Path.Combine(_testRoot, $"{note2.Title}.md");
+
+            string noteToLoadContent = $"---\nid: {noteToLoad.Id}\ntitle: {noteToLoad.Title}\n---\n\n";
+            string file2Content = $"---\nid: {note2.Id}\ntitle: {note2.Title}\n---\n\n";
+
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([path1, path2]);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path1)).Returns(noteToLoadContent);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(path2)).Returns(file2Content);
+
+            var loadedNote = _service.LoadNote(noteToLoad.Id);
+
+            _mockFileSystem.Verify(fs => fs
+            .GetFiles(_testRoot, "*.md"), Times.Exactly(2)); //MigrateFiles тоже вызывает GetFiles
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Never);
+            Assert.Equal(noteToLoad.Title, loadedNote.Title);
+        }
+
+        [Fact]
+        public void LoadNote_EmptyGuid_ThrowsException()
+        {
+            Guid nullGuid = Guid.Empty;
+
+            Assert.Throws<ArgumentNullException>(() => _service.LoadNote(nullGuid));
+        }
+
+        [Fact]
+        public void LoadNote_DirectoryDoesNotExist_ThrowsException()
+        {
+            Guid anyGuid = Guid.NewGuid();
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(true);
+
+            var service = new NoteService(_mockFileSystem.Object, _testRoot);
+
+            _mockFileSystem.Setup(fs => fs
+            .DirectoryExists(It.IsAny<string>())).Returns(false);
+
+            Assert.Throws<DirectoryNotFoundException>(() => service.LoadNote(anyGuid));
+        }
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedAccessException))]
+        [InlineData(typeof(Exception))]
+        public void LoadNote_DirectoryHasInvalidNote_StillLoadsValidOneAndLogs(Type exception)
+        {
+            var badNote = new Note(Guid.NewGuid(), "Bad Note", "", DateTime.Now, DateTime.Now);
+            var goodNote = new Note(Guid.NewGuid(), "Good Note", "", DateTime.Now, DateTime.Now);
+
+            string goodPath = Path.Combine(_testRoot, $"{goodNote.Title}.md");
+            string badPath = Path.Combine(_testRoot, $"{badNote.Title}.md");
+
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([badPath, goodPath]);
+            _mockFileSystem.Setup(fs => fs
+            .FileExists(It.IsAny<string>())).Returns(true);
+
+            string goodFileContent = $"---\nid: {goodNote.Id}\ntitle: {goodNote.Title}\n---\n\n";
+            var expectedException = (Exception)Activator.CreateInstance(exception);
+
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(badPath)).Throws(expectedException);
+            _mockFileSystem.Setup(fs => fs
+            .ReadAllText(goodPath)).Returns(goodFileContent);
+
+            var loadedNote = _service.LoadNote(goodNote.Id);
+
+            _mockFileSystem.Verify(fs => fs
+            .ReadAllText(It.IsAny<string>()), Times.Exactly(2));
+            _mockLogger.Verify(log => log
+            .Log(It.IsAny<string>()), Times.Once);
+            Assert.NotNull(loadedNote);
+            Assert.Equal(goodNote.Title, loadedNote.Title);
+        }
+
+        [Fact]
+        public void LoadNote_NoteIsNotFound_ThrowsException()
+        {
+            Guid anyGuid = Guid.NewGuid();
+            _mockFileSystem.Setup(fs => fs
+            .GetFiles(_testRoot, "*.md")).Returns([]);
+
+            Assert.Throws<FileNotFoundException>(() => _service.LoadNote(anyGuid));
+        }
     }
 }
