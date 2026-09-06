@@ -14,10 +14,13 @@ namespace Tests
 
         private readonly MainWindowViewModel _viewModel;
 
+        private readonly Mock<IDialogueService> _mockDialogueService;
+
         public MainWindowViewModelTests()
         {
             _mockService = new Mock<INoteService>();
-            _viewModel = new MainWindowViewModel(_mockService.Object);
+            _mockDialogueService = new Mock<IDialogueService>();
+            _viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
         }
 
         [Fact]
@@ -30,7 +33,7 @@ namespace Tests
             _mockService.Setup(s => s
             .LoadAll()).Returns(expectedNoteList);
 
-            var viewModel = new MainWindowViewModel(_mockService.Object);
+            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
 
             Assert.Equal(2, viewModel.Notes.Count);
             Assert.Equal(note1.Id, viewModel.Notes[0].Id);

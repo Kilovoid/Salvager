@@ -21,6 +21,7 @@ namespace Salvager.ViewModels
     public partial class MainWindowViewModel : ObservableObject
     {
         private readonly INoteService _noteService;
+        private readonly IDialogueService _dialogueService;
 
         [ObservableProperty]
         private ObservableCollection<Note> _notes = new();
@@ -34,9 +35,10 @@ namespace Salvager.ViewModels
         [ObservableProperty]
         private EditorViewModel? _selectedNoteViewModel;
 
-        public MainWindowViewModel(INoteService noteService)
+        public MainWindowViewModel(INoteService noteService, IDialogueService dialogueService)
         {
             _noteService = noteService;
+            _dialogueService = dialogueService;
             LoadNotesFromDisk();
         }
 
@@ -64,9 +66,7 @@ namespace Salvager.ViewModels
         {
             if (string.IsNullOrWhiteSpace(note.Title))
             {
-                var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Warning" ,"Check the title of the new note", ButtonEnum.Ok);
-                await box.ShowAsync();
+                await _dialogueService.ShowWarningAsync("Warning", "Check the title - it cannot be blank");
                 return;
             }
             Notes.Add(note);
@@ -85,36 +85,34 @@ namespace Salvager.ViewModels
             }
             catch (ArgumentNullException ex)
             {
-                var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", "Note to save is null!", ButtonEnum.Ok);
-                await box.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error", "Selected note is null");
+                return;
             }
             catch (ArgumentException ex)
             {
-                var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", $"Error in data : {ex.Message}", ButtonEnum.Ok);
-                await box.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error", $"Error in data : {ex.Message}");
+                return;
             }
             catch (IOException ex)
             {
-                var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", $"Unable to save the note, please check the directory and disk :: {ex.Message}", ButtonEnum.Ok);
-                await box.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error",
+                    $"Unable to save the note, please check the directory and disk :: {ex.Message}");
+                return;
             }
             catch (Exception ex)
             {
-                var box = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", $"Unknown Error, please restart the app!", ButtonEnum.Ok);
-                await box.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error", $"Unknown Error, please restart the app!");
+                return;
             }
         }
         [RelayCommand]
         private async Task DeleteNote()
         {
             if (SelectedNote == null) return;
-            var box = MessageBoxManager.GetMessageBoxStandard(
-                "Warning", "Are you sure you want to delete this note?", ButtonEnum.OkCancel);
-            ButtonResult result = await box.ShowAsync();
+            ButtonResult result = await _dialogueService.ShowWarningAsync("Warning",
+                "Are you sure you want to delete this note?",
+                ButtonEnum.OkCancel);
+
             if (result == ButtonResult.Cancel)
             {
                 return;
@@ -130,15 +128,13 @@ namespace Salvager.ViewModels
             }
             catch (ArgumentNullException ex)
             {
-                var errorBox = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", $"{ex.Message}", ButtonEnum.Ok);
-                await errorBox.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error", $"{ex.Message}");
+                return;
             }
             catch (ArgumentException ex)
             {
-                var errorBox = MessageBoxManager.GetMessageBoxStandard(
-                    "Error", $"{ex.Message}", ButtonEnum.Ok);
-                await errorBox.ShowAsync();
+                await _dialogueService.ShowErrorAsync("Error", $"{ex.Message}");
+                return;
             }
 
         }

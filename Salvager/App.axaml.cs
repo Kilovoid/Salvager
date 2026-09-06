@@ -31,6 +31,7 @@ public partial class App : Application
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<INoteService, NoteService>();
         services.AddSingleton<IFileSystem, RealFileSystem>();
+        services.AddSingleton<IDialogueService, RealDialogueService>();
 
         var provider = services.BuildServiceProvider();
 
