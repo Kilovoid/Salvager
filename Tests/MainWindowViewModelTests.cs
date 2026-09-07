@@ -20,6 +20,8 @@ namespace Tests
         {
             _mockService = new Mock<INoteService>();
             _mockDialogueService = new Mock<IDialogueService>();
+            _mockService.Setup(s => s
+            .LoadAll()).Returns(new List<Note>());
             _viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
         }
 
@@ -32,6 +34,7 @@ namespace Tests
 
             _mockService.Setup(s => s
             .LoadAll()).Returns(expectedNoteList);
+            _mockService.Invocations.Clear();
 
             var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
 
@@ -57,6 +60,20 @@ namespace Tests
             Assert.NotNull(_viewModel.SelectedNoteViewModel);
             _mockService.Verify(s => s
             .SaveNote(It.IsAny<Note>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SaveNote_SelectedNoteIsNull_Returns()
+        {
+            _mockService.Setup(s => s
+            .LoadAll()).Returns(new List<Note>());
+
+            _viewModel.SelectedNote = null;
+
+            await _viewModel.SaveNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .SaveNote(It.IsAny<Note>()), Times.Never);
         }
     }
 }
