@@ -51,7 +51,7 @@ namespace Tests
         {
             _viewModel.CreateNewNoteCommand.Execute(null);
 
-            Assert.Equal(1, _viewModel.Notes.Count);
+            Assert.Single (_viewModel.Notes);
             Assert.Equal("New Note", _viewModel.Notes[0].Title);
             Assert.Equal(_viewModel.Notes[0], _viewModel.SelectedNote);
             Assert.NotNull(_viewModel.SelectedNoteViewModel);
