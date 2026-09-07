@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Moq;
+using MsBox.Avalonia.Enums;
 using Salvager.Models;
 using Salvager.Services;
 using Salvager.ViewModels;
@@ -74,6 +75,128 @@ namespace Tests
 
             _mockService.Verify(s => s
             .SaveNote(It.IsAny<Note>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SaveNote_Works()
+        {
+            var note = new Note(Guid.NewGuid(), "Test Note", "", DateTime.Now, DateTime.Now);
+
+            _mockService.Setup(s => s
+            .LoadAll()).Returns([note]);
+
+            _viewModel.SelectedNote = note;
+
+            await _viewModel.SaveNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .SaveNote(It.IsAny<Note>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(typeof(ArgumentNullException))]
+        [InlineData(typeof(ArgumentException))]
+        [InlineData(typeof(IOException))]
+        [InlineData(typeof(Exception))]
+        public async Task SaveNote_Error_CallsMessageBox(Type exception)
+        {
+            var note = new Note(Guid.NewGuid(), "Test Note", "", DateTime.Now, DateTime.Now);
+
+            //_mockService.Setup(s => s
+            //.LoadAll()).Returns([note]);
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+            var expectedException = (Exception)Activator.CreateInstance(exception);
+            _mockService.Setup(s => s
+            .SaveNote(note)).Throws(expectedException);
+            await _viewModel.SaveNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .SaveNote(It.IsAny<Note>()), Times.Once);
+            _mockDialogueService.Verify(dial => dial
+            .ShowErrorAsync(It.IsAny<string>(),
+            It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteNote_SelectedNoteNull_Returns()
+        {
+            _mockService.Setup(s => s
+            .LoadAll()).Returns(new List<Note>());
+
+            _viewModel.SelectedNote = null;
+
+            await _viewModel.DeleteNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .DeleteNote(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteNote_OnCancelPressed_Returns()
+        {
+            var note = new Note(Guid.NewGuid(), "Test Note", "", DateTime.Now, DateTime.Now);
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+
+            _mockDialogueService.Setup(dial => dial
+            .ShowWarningAsync("Warning",
+            "Are you sure you want to delete this note?",
+            ButtonEnum.OkCancel)).ReturnsAsync(ButtonResult.Cancel);
+
+            await _viewModel.DeleteNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .DeleteNote(It.IsAny<Guid>()), Times.Never);
+            Assert.NotEmpty(_viewModel.Notes);
+            Assert.NotNull(_viewModel.SelectedNote);
+        }
+
+        [Fact]
+        public async Task DeleteNote_OnOkPressed_Works()
+        {
+            var note = new Note(Guid.NewGuid(), "Test Note", "", DateTime.Now, DateTime.Now);
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+
+            _mockDialogueService.Setup(dial => dial
+            .ShowWarningAsync("Warning",
+            "Are you sure you want to delete this note?",
+            ButtonEnum.OkCancel)).ReturnsAsync(ButtonResult.Ok);
+
+            await _viewModel.DeleteNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .DeleteNote(It.IsAny<Guid>()), Times.Once);
+            Assert.Empty(_viewModel.Notes);
+            Assert.Null(_viewModel.SelectedNote);
+            Assert.Null(_viewModel.SelectedNoteViewModel);
+        }
+
+        [Theory]
+        [InlineData(typeof(ArgumentNullException))]
+        [InlineData(typeof(ArgumentException))]
+        public async Task DeleteNote_Error_CallsMessageBox(Type exception)
+        {
+            Guid testGuid = Guid.NewGuid();
+            var note = new Note(testGuid, "Test Note", "", DateTime.Now, DateTime.Now);
+
+            //_mockService.Setup(s => s
+            //.LoadAll()).Returns([note]);
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+            var expectedException = (Exception)Activator.CreateInstance(exception);
+            _mockService.Setup(s => s
+            .DeleteNote(testGuid)).Throws(expectedException);
+            await _viewModel.DeleteNoteCommand.ExecuteAsync(null);
+
+            _mockService.Verify(s => s
+            .DeleteNote(It.IsAny<Guid>()), Times.Once);
+            _mockDialogueService.Verify(dial => dial
+            .ShowErrorAsync(It.IsAny<string>(),
+            It.IsAny<string>()), Times.Once);
+            Assert.NotNull(_viewModel.SelectedNote);
+            Assert.NotEmpty(_viewModel.Notes);
         }
     }
 }
