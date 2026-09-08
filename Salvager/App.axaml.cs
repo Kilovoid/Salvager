@@ -29,6 +29,7 @@ public partial class App : Application
         var services = new ServiceCollection();
 
         services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<IEditorViewModelFactory, EditorViewModelFactory>();
         services.AddSingleton<INoteService, NoteService>();
         services.AddSingleton<IFileSystem, RealFileSystem>();
         services.AddSingleton<IDialogueService, RealDialogueService>();

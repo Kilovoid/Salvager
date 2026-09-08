@@ -7,7 +7,7 @@ using System.ComponentModel;
 
 namespace Salvager.ViewModels
 {
-    public partial class EditorViewModel : ObservableObject
+    public partial class EditorViewModel : ObservableObject, IEditorViewModel
     {
         [ObservableProperty]
         private Note _currentPage;

@@ -17,13 +17,19 @@ namespace Tests
 
         private readonly Mock<IDialogueService> _mockDialogueService;
 
+        private readonly Mock<IEditorViewModelFactory> _mockEditorFactory;
+
         public MainWindowViewModelTests()
         {
             _mockService = new Mock<INoteService>();
             _mockDialogueService = new Mock<IDialogueService>();
+            _mockEditorFactory = new Mock<IEditorViewModelFactory>();
             _mockService.Setup(s => s
             .LoadAll()).Returns(new List<Note>());
-            _viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
+            _mockEditorFactory.Setup(factory => factory
+            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
+            _viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object,
+                _mockEditorFactory.Object);
         }
 
         [Fact]
@@ -37,12 +43,14 @@ namespace Tests
             .LoadAll()).Returns(expectedNoteList);
             _mockService.Invocations.Clear();
 
-            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
+            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object,
+                _mockEditorFactory.Object);
 
             Assert.Equal(2, viewModel.Notes.Count);
             Assert.Equal(note1.Id, viewModel.Notes[0].Id);
             Assert.Equal(note1.Title, viewModel.Notes[0].Title);
             Assert.Equal(note1.Id, viewModel.SelectedNote.Id);
+            Assert.NotNull(viewModel.SelectedNote);
             Assert.NotNull(viewModel.SelectedNoteViewModel);
             Assert.Equal(note1.Id, viewModel.SelectedNoteViewModel.CurrentPage.Id);
 
@@ -57,7 +65,8 @@ namespace Tests
             .LoadAll()).Returns([]);
             _mockService.Invocations.Clear();
 
-            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
+            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object,
+                _mockEditorFactory.Object);
 
             Assert.Empty(viewModel.Notes);
             Assert.Null(viewModel.SelectedNote);

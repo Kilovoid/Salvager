@@ -22,6 +22,7 @@ namespace Salvager.ViewModels
     {
         private readonly INoteService _noteService;
         private readonly IDialogueService _dialogueService;
+        private readonly IEditorViewModelFactory _editorFactory;
 
         [ObservableProperty]
         private ObservableCollection<Note> _notes = new();
@@ -33,12 +34,14 @@ namespace Salvager.ViewModels
         private Note? _selectedNote;
 
         [ObservableProperty]
-        private EditorViewModel? _selectedNoteViewModel;
+        private IEditorViewModel? _selectedNoteViewModel;
 
-        public MainWindowViewModel(INoteService noteService, IDialogueService dialogueService)
+        public MainWindowViewModel(INoteService noteService, IDialogueService dialogueService,
+            IEditorViewModelFactory editorFactory)
         {
             _noteService = noteService;
             _dialogueService = dialogueService;
+            _editorFactory = editorFactory;
             LoadNotesFromDisk();
         }
 
@@ -49,20 +52,19 @@ namespace Salvager.ViewModels
             foreach (var note in loadedNotes)
             {
                 Notes.Add(note);
+            
             }
             SelectedNote = Notes.FirstOrDefault();
-            SelectedNoteViewModel = SelectedNote != null
-                ? new EditorViewModel(SelectedNote)
-                : null;
+            SelectedNoteViewModel = SelectedNote != null ? _editorFactory.Create(SelectedNote) : null;
         }
 
         [RelayCommand]
         private void CreateNewNote()
         {
             var newNote = new Note("New Note", "");
-            CreateNewNote(newNote);
+            _ = CreateNoteAsync(newNote);
         }
-        private async Task CreateNewNote(Note note)
+        private async Task CreateNoteAsync(Note note)
         {
             if (string.IsNullOrWhiteSpace(note.Title))
             {
@@ -72,7 +74,7 @@ namespace Salvager.ViewModels
             Notes.Add(note);
             _noteService.SaveNote(note);
             SelectedNote = note;
-            SelectedNoteViewModel = new EditorViewModel(note);
+            SelectedNoteViewModel = _editorFactory.Create(note);
         }
         [RelayCommand]
         private async Task SaveNote()
@@ -123,7 +125,7 @@ namespace Salvager.ViewModels
                 Notes.Remove(SelectedNote);
                 SelectedNote = Notes.FirstOrDefault();
                 SelectedNoteViewModel = SelectedNote != null
-                    ? new EditorViewModel(SelectedNote)
+                    ? _editorFactory.Create(SelectedNote)
                     : null;
             }
             catch (ArgumentNullException ex)
@@ -171,7 +173,7 @@ namespace Salvager.ViewModels
         {
             if (value != null)
             {
-                SelectedNoteViewModel = new EditorViewModel(value);
+                SelectedNoteViewModel = _editorFactory.Create(value);
             }
         }
     }
