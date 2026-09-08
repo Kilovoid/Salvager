@@ -36,8 +36,7 @@
                         <MenuItem Header="New" Command="{Binding CreateNewNoteCommand}"/>
                         <MenuItem Header="Save" Command="{Binding SaveNoteCommand}"/>
                         <MenuItem Header="Delete" Command="{Binding DeleteNoteCommand}"/>
-                        <MenuItem Header="Sort" Command="{Binding DoSortCommand}"/>
-                        <MenuItem Header="ERROR" Command="{Binding GenerateErrorCommand}"/>
+						<MenuItem Header="Sort" Command="{Binding DoSortCommand}"/>
                         <Separator/>
                         <MenuItem Header="Quit" Command="{Binding ExitCommand}"/>
                     </MenuItem>

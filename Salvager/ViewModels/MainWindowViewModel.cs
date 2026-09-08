@@ -143,7 +143,6 @@ namespace Salvager.ViewModels
         private void DoSort()
         {
             var selected = SelectedNote;
-            System.Diagnostics.Debug.WriteLine($"Before sort: {Notes.Count}");
             var sorted = SortDescending
                 ? Notes.OrderByDescending(n => n.UpdatedAt).ToList()
                 : Notes.OrderBy(n => n.UpdatedAt).ToList();
@@ -168,11 +167,6 @@ namespace Salvager.ViewModels
             Environment.Exit(0);
         }
 
-        [RelayCommand]
-        private void GenerateError()
-        {
-            throw new InvalidOperationException("Test of the exception from app.axaml.cs");
-        }
         partial void OnSelectedNoteChanged(Note value)
         {
             if (value != null)

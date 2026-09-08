@@ -51,11 +51,28 @@ namespace Tests
         }
 
         [Fact]
+        public void Constructor_NoNotes_StillLoadsEmptyList()
+        {
+            _mockService.Setup(s => s
+            .LoadAll()).Returns([]);
+            _mockService.Invocations.Clear();
+
+            var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object);
+
+            Assert.Empty(viewModel.Notes);
+            Assert.Null(viewModel.SelectedNote);
+            Assert.Null(viewModel.SelectedNoteViewModel);
+
+            _mockService.Verify(s => s
+            .LoadAll(), Times.Once);
+        }
+
+        [Fact]
         public void CreateNewNote_Works()
         {
             _viewModel.CreateNewNoteCommand.Execute(null);
 
-            Assert.Single (_viewModel.Notes);
+            Assert.Single(_viewModel.Notes);
             Assert.Equal("New Note", _viewModel.Notes[0].Title);
             Assert.Equal(_viewModel.Notes[0], _viewModel.SelectedNote);
             Assert.NotNull(_viewModel.SelectedNoteViewModel);
@@ -150,6 +167,7 @@ namespace Tests
             .DeleteNote(It.IsAny<Guid>()), Times.Never);
             Assert.NotEmpty(_viewModel.Notes);
             Assert.NotNull(_viewModel.SelectedNote);
+            Assert.NotNull(_viewModel.SelectedNoteViewModel);
         }
 
         [Fact]
@@ -196,7 +214,58 @@ namespace Tests
             .ShowErrorAsync(It.IsAny<string>(),
             It.IsAny<string>()), Times.Once);
             Assert.NotNull(_viewModel.SelectedNote);
+            Assert.NotNull(_viewModel.SelectedNoteViewModel);
             Assert.NotEmpty(_viewModel.Notes);
         }
+
+        [Fact]
+        public void DoSort_Works()
+        {
+            DateTime note1DateTime = new DateTime(12, 12, 12, 12, 12, 12);
+            var note1 = new Note(Guid.NewGuid(), "Test Note 1", "", note1DateTime, note1DateTime);
+            var note2 = new Note(Guid.NewGuid(), "Test Note 2", "", DateTime.Now, DateTime.Now);
+
+            _viewModel.Notes.Add(note1);
+            _viewModel.Notes.Add(note2);
+            _viewModel.SelectedNote = note1;
+
+            var expectedNotes = new List<Note> { note2, note1 };
+
+            _viewModel.DoSortCommand.Execute(null);
+
+            Assert.Equal(expectedNotes, _viewModel.Notes);
+            Assert.Equal(note2, _viewModel.Notes[0]);
+            Assert.Equal(note1, _viewModel.Notes[1]);
+            Assert.Equal(note1, _viewModel.SelectedNote);
+            Assert.Equal(2, _viewModel.Notes.Count);
+            _mockService.Verify(s => s
+            .SaveNote(It.IsAny<Note>()), Times.Never);
+        }
+
+        [Fact]
+        public void DoSort_FalseSortDescending_SortsAscending()
+        {
+            DateTime note1DateTime = new DateTime(12, 12, 12, 12, 12, 12);
+            var note1 = new Note(Guid.NewGuid(), "Test Note 1", "", note1DateTime, note1DateTime);
+            var note2 = new Note(Guid.NewGuid(), "Test Note 2", "", DateTime.Now, DateTime.Now);
+
+            _viewModel.Notes.Add(note1);
+            _viewModel.Notes.Add(note2);
+            _viewModel.SelectedNote = note1;
+            _viewModel.SortDescending = false;
+            var expectedNotes = new List<Note> { note1, note2 };
+
+            _viewModel.DoSortCommand.Execute(null);
+
+            Assert.Equal(expectedNotes, _viewModel.Notes);
+            Assert.Equal(note1, _viewModel.Notes[0]);
+            Assert.Equal(note2, _viewModel.Notes[1]);
+            Assert.Equal(note1, _viewModel.SelectedNote);
+            Assert.Equal(2, _viewModel.Notes.Count);
+            _mockService.Verify(s => s
+            .SaveNote(It.IsAny<Note>()), Times.Never);
+        }
+
+
     }
 }
