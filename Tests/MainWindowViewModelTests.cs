@@ -19,15 +19,18 @@ namespace Tests
 
         private readonly Mock<IEditorViewModelFactory> _mockEditorFactory;
 
+        private readonly Mock<IEditorViewModel> _mockEditor;
+
         public MainWindowViewModelTests()
         {
             _mockService = new Mock<INoteService>();
             _mockDialogueService = new Mock<IDialogueService>();
             _mockEditorFactory = new Mock<IEditorViewModelFactory>();
+            _mockEditor = new Mock<IEditorViewModel>();
             _mockService.Setup(s => s
             .LoadAll()).Returns(new List<Note>());
             _mockEditorFactory.Setup(factory => factory
-            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
+            .Create(It.IsAny<Note>())).Returns(_mockEditor.Object);
             _viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object,
                 _mockEditorFactory.Object);
         }
@@ -42,6 +45,8 @@ namespace Tests
             _mockService.Setup(s => s
             .LoadAll()).Returns(expectedNoteList);
             _mockService.Invocations.Clear();
+            _mockEditorFactory.Setup(f => f
+            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
 
             var viewModel = new MainWindowViewModel(_mockService.Object, _mockDialogueService.Object,
                 _mockEditorFactory.Object);
@@ -117,6 +122,8 @@ namespace Tests
 
             _mockService.Verify(s => s
             .SaveNote(It.IsAny<Note>()), Times.Once);
+            _mockEditor.Verify(f => f
+            .ResetSnapshot(), Times.Once);
         }
 
         [Theory]
@@ -274,7 +281,5 @@ namespace Tests
             _mockService.Verify(s => s
             .SaveNote(It.IsAny<Note>()), Times.Never);
         }
-
-
     }
 }
