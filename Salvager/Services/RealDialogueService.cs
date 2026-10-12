@@ -1,4 +1,4 @@
-﻿using MsBox.Avalonia;
+﻿npx using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using System;
 using System.Collections.Generic;
