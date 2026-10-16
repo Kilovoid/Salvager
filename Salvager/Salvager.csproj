@@ -36,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="E:\SalvagerProject\Salvager\Salvager\.editorconfig" />
+    <None Include=".editorconfig" 
+		  Condition="Exists('.editorconfig')" />
   </ItemGroup>
 </Project>
