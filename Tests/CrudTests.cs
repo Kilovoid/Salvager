@@ -149,6 +149,53 @@ namespace Tests
         }
 
         [Fact]
+        public void SaveNote_WhenWriteFails_DoesNotDeleteOldFile()
+        {
+            var noteId = Guid.NewGuid();
+            string oldPath = Path.Combine(_testRoot, "Old.md");
+
+            string oldFileContent =
+                $"---\n" +
+                $"id: {noteId}\n" +
+                $"title: Old title\n" +
+                $"createdAt: 2026-10-01T10:00:00\n" +
+                $"updatedAt: 2026-10-01T10:00:00\n" +
+                $"---\n\n" +
+                $"Old content";
+
+            var note = new Note(
+                noteId,
+                "New",
+                "Content",
+                new DateTime(2026, 12, 12, 12, 12, 12),
+                new DateTime(2026, 12, 12, 12, 12, 12));
+
+            _mockFileSystem.Setup(fs => fs
+                .GetFiles(_testRoot, "*.md"))
+                .Returns(new[] { oldPath });
+            _mockFileSystem.Setup(fs => fs
+                .ReadAllText(oldPath))
+                .Returns(oldFileContent);
+            _mockFileSystem.Setup(fs => fs
+                .FileExists(oldPath))
+                .Returns(true);
+
+            var writeError = new IOException("Test write exception");
+
+            _mockFileSystem.Setup(fs => fs
+                .WriteAllText(It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Encoding>()))
+                .Throws(writeError);
+
+            var realError = Assert.Throws<IOException>(() => _service.SaveNote(note));
+            Assert.Same(writeError, realError);
+
+            _mockFileSystem.Verify(fs => fs
+            .DeleteFile(oldPath), Times.Never);
+        }
+
+        [Fact]
         public void SaveNote_WhenTitleChanges_CreatesNewDeletesOld()
         {
             var currentNote = new Note(Guid.NewGuid(), $"{Guid.NewGuid()}", "", DateTime.Now, DateTime.Now);
