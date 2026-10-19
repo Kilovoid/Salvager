@@ -27,5 +27,9 @@ namespace Salvager.Services
 
         public void WriteAllText(string path, string contents, Encoding encoding) =>
             File.WriteAllText(path, contents, encoding);
+
+        public void ReplaceFile(string source, string destination) => File.Replace(source, destination, null);
+
+        public void MoveFile(string source, string destination) => File.Move(source, destination);
     }
 }

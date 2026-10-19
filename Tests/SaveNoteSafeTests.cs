@@ -44,6 +44,38 @@ namespace Tests
             _mockFileSystem.Setup(fs => fs
                 .WriteAllText(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Encoding>()))
                     .Callback<string, string, Encoding>((path, content, encoding) => _pathAndContent[path] = content); // записываем у ключу какой-то контент
+            _mockFileSystem.Setup(fs => fs
+                .ReplaceFile(It.IsAny<string>(), It.IsAny<string>())).Callback<string, string>((source, destination) =>
+                {
+                    if(source == destination)
+                    {
+                        throw new IOException("Source and destination paths must be different");
+                    }
+                    if(!_pathAndContent.ContainsKey(source))
+                    {
+                        throw new FileNotFoundException(null, source);
+                    }
+                    if(!_pathAndContent.ContainsKey(destination))
+                    {
+                        throw new FileNotFoundException(null, destination);
+                    }
+                    _pathAndContent[destination] = _pathAndContent[source];
+                    _pathAndContent.Remove(source);
+                });
+            _mockFileSystem.Setup(fs => fs
+                .MoveFile(It.IsAny<string>(), It.IsAny<string>())).Callback<string, string>((source, destination) =>
+                {
+                    if (!_pathAndContent.ContainsKey(source))
+                    {
+                        throw new FileNotFoundException(null, source);
+                    }
+                    if (_pathAndContent.ContainsKey(destination))
+                    {
+                        throw new IOException("Destination already exists");
+                    }
+                    _pathAndContent[destination] = _pathAndContent[source];
+                    _pathAndContent.Remove(source);
+                });
 
             _logger = new Mock<ILogger>();
             _service = new NoteService(
@@ -62,10 +94,10 @@ namespace Tests
             Guid id = Guid.NewGuid();
             DateTime savedAt = _defaultSavedAt;
             string oldTitle = "OldTitle";
-            string oldPath = NotePath(oldTitle);
+            string path = NotePath(oldTitle);
             string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
 
-            _pathAndContent[oldPath] = oldFileContent;
+            _pathAndContent[path] = oldFileContent;
 
             var newNote = new Note(id, "OldTitle", "New Content", savedAt, savedAt);
 
@@ -79,8 +111,8 @@ namespace Tests
 
             Assert.Throws<IOException>(() => _service.SaveNote(newNote));
 
-            Assert.True(_pathAndContent.ContainsKey(oldPath));
-            Assert.Equal(oldFileContent, _pathAndContent[oldPath]);
+            Assert.True(_pathAndContent.ContainsKey(path));
+            Assert.Equal(oldFileContent, _pathAndContent[path]);
         }
 
         [Fact]
@@ -89,22 +121,42 @@ namespace Tests
             Guid id = Guid.NewGuid();
             DateTime savedAt = _defaultSavedAt;
             string oldTitle = "OldTitle";
-            string oldPath = NotePath(oldTitle);
+            string path = NotePath(oldTitle);
             string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
 
-            _pathAndContent[oldPath] = oldFileContent;
+            _pathAndContent[path] = oldFileContent;
 
             var newNote = new Note(id, oldTitle, "New Content", savedAt, savedAt);
 
             _service.SaveNote(newNote);
 
-            Assert.True(_pathAndContent.ContainsKey(oldPath));
+            Assert.True(_pathAndContent.ContainsKey(path));
+            Assert.EndsWith("New Content", _pathAndContent[path]);
+
+            Assert.Single(_pathAndContent);
         }
 
         [Fact]
-        public void SaveNote_CreatesTempFile()
+        public void SaveNote_WhenTitleChanges_SavesNewRemovesOld()
         {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            string oldTitle = "OldTitle";
+            string newTitle = "NewTitle";
+            string oldPath = NotePath(oldTitle);
+            string newPath = NotePath(newTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
 
+            _pathAndContent[oldPath] = oldFileContent;
+
+            var newNote = new Note(id, newTitle, "New Content", savedAt, savedAt);
+
+            _service.SaveNote(newNote);
+
+            Assert.True(_pathAndContent.ContainsKey(newPath));
+            Assert.EndsWith("New Content", _pathAndContent[newPath]);
+            Assert.False(_pathAndContent.ContainsKey(oldPath));
+            Assert.Single(_pathAndContent);
         }
         
         //Вспомогательные методы

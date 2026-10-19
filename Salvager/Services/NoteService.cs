@@ -147,9 +147,18 @@ namespace Salvager.Services
             string fileContent = BuildFileContent(currentNote);
             _fileSystem.WriteAllText(tempFilePath, fileContent, Encoding.UTF8);
 
-            if (oldFilePath != null && oldFilePath != newFilePath)
+            if (_fileSystem.FileExists(newFilePath))
             {
-                _fileSystem.DeleteFile(oldFilePath);
+                _fileSystem.ReplaceFile(tempFilePath, newFilePath);
+            }
+            else
+            {
+                _fileSystem.MoveFile(tempFilePath, newFilePath);
+
+                if (oldFilePath != null)
+                {
+                    _fileSystem.DeleteFile(oldFilePath);
+                }
             }
         }
 
