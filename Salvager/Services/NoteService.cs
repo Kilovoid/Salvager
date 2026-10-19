@@ -135,6 +135,7 @@ namespace Salvager.Services
             string sanitized = SanitizeName(currentNote.Title);
             string newFileName = sanitized + ".md";
             string newFilePath = _fileSystem.CombinePath(_notesDirectory, newFileName);
+            string tempFilePath = _fileSystem.CombinePath(_notesDirectory, $"{Guid.NewGuid()}.tmp");
 
             if (_fileSystem.FileExists(newFilePath) && oldFilePath != newFilePath)
             {
@@ -144,7 +145,7 @@ namespace Salvager.Services
             }
 
             string fileContent = BuildFileContent(currentNote);
-            _fileSystem.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+            _fileSystem.WriteAllText(tempFilePath, fileContent, Encoding.UTF8);
 
             if (oldFilePath != null && oldFilePath != newFilePath)
             {

@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Salvager.Models;
 using Salvager.Services;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,14 @@ namespace Tests
 {
     public class SaveNoteSafeTests
     {
+        private readonly DateTime _defaultSavedAt = new DateTime(2026, 12, 12, 12, 12, 12);
+        private readonly NoteService _service;
+        private readonly Mock<ILogger> _logger;
+        private readonly string _testRoot = Path.Combine(
+            Path.GetTempPath(), "SalvagerTests");
         private readonly Dictionary<string, string> _pathAndContent;
         private readonly Mock<IFileSystem> _mockFileSystem;
+
         public SaveNoteSafeTests()
         {
             _pathAndContent = new Dictionary<string, string>();
@@ -37,6 +44,10 @@ namespace Tests
             _mockFileSystem.Setup(fs => fs
                 .WriteAllText(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Encoding>()))
                     .Callback<string, string, Encoding>((path, content, encoding) => _pathAndContent[path] = content); // записываем у ключу какой-то контент
+
+            _logger = new Mock<ILogger>();
+            _service = new NoteService(
+                _mockFileSystem.Object, _logger.Object, _testRoot);
         }
         [Fact]
         public void SaveNote_WhenWriteFailsWithoutRename_KeepsOldContent()
@@ -48,8 +59,80 @@ namespace Tests
             //Для Arrange понадобится вызвать настоящий NoteService, фальшивый FileSystem
 
             //Чтобы проверять содержимое есть смысл создать некоторый словарь, который хранит как ключ путь, а содержимое как переменную.
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            string oldTitle = "OldTitle";
+            string oldPath = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[oldPath] = oldFileContent;
+
+            var newNote = new Note(id, "OldTitle", "New Content", savedAt, savedAt);
+
+            _mockFileSystem.Setup(fs => fs
+                .WriteAllText(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Encoding>()))
+                    .Callback<string, string, Encoding>((path, content, encoding) =>
+                    {
+                        _pathAndContent[path] = "WRITE THIS";
+                        throw new IOException("Error writing");
+                    });
+
+            Assert.Throws<IOException>(() => _service.SaveNote(newNote));
+
+            Assert.True(_pathAndContent.ContainsKey(oldPath));
+            Assert.Equal(oldFileContent, _pathAndContent[oldPath]);
+        }
+
+        [Fact]
+        public void SaveNote_SavesAfterTemp()
+        {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            string oldTitle = "OldTitle";
+            string oldPath = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[oldPath] = oldFileContent;
+
+            var newNote = new Note(id, oldTitle, "New Content", savedAt, savedAt);
+
+            _service.SaveNote(newNote);
+
+            Assert.True(_pathAndContent.ContainsKey(oldPath));
+        }
+
+        [Fact]
+        public void SaveNote_CreatesTempFile()
+        {
+
+        }
+        
+        //Вспомогательные методы
+
+        private string NotePath(string noteTitle)
+        {
+            return Path.Combine(_testRoot, noteTitle + ".md");
+        }
+
+        private string BuildNoteContent(Guid id, string title, string content)
+        {
+            var metadata = new NoteMetadata
+            {
+                Id = id,
+                Title = title,
+                CreatedAt = _defaultSavedAt,
+                UpdatedAt = _defaultSavedAt
+            };
+
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+
+            string yamlPart = serializer.Serialize(metadata);
+
+            return "---\n" + yamlPart + "---\n\n" + content;
+        }
 
 
-        } 
     }
 }
