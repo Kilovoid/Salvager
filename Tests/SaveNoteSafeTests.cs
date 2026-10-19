@@ -158,6 +158,34 @@ namespace Tests
             Assert.False(_pathAndContent.ContainsKey(oldPath));
             Assert.Single(_pathAndContent);
         }
+
+        [Fact]
+        public void SaveNote_ReplaceFails_EverythingStays()
+        {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            string oldTitle = "OldTitle";
+            string path = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[path] = oldFileContent;
+
+            var newNote = new Note(id, oldTitle, "New Content", savedAt, savedAt);
+
+            var expectedError = new IOException("Replace failed");
+
+            _mockFileSystem.Setup(fs => fs
+                .ReplaceFile(It.IsAny<string>(), It.IsAny<string>())).Throws(expectedError);
+
+            var actualError = Assert.Throws<IOException>(() => _service.SaveNote(newNote));
+
+            Assert.Same(expectedError, actualError);
+            Assert.True(_pathAndContent.ContainsKey(path));
+            Assert.Equal(oldFileContent, _pathAndContent[path]);
+
+            _mockFileSystem.Verify(fs => fs
+                .ReplaceFile(It.IsAny<string>(), path), Times.Once);
+        }
         
         //Вспомогательные методы
 
