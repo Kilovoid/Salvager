@@ -186,7 +186,38 @@ namespace Tests
             _mockFileSystem.Verify(fs => fs
                 .ReplaceFile(It.IsAny<string>(), path), Times.Once);
         }
-        
+
+        [Fact]
+        public void SaveNote_MoveFileFails_EverythingStays()
+        {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            string oldTitle = "OldTitle";
+            string newTitle = "New Title";
+            string oldPath = NotePath(oldTitle);
+            string newPath = NotePath(newTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[oldPath] = oldFileContent;
+
+            var newNote = new Note(id, newTitle, "New Content", savedAt, savedAt);
+
+            var expectedError = new IOException("Move failed");
+
+            _mockFileSystem.Setup(fs => fs
+                .MoveFile(It.IsAny<string>(), It.IsAny<string>())).Throws(expectedError);
+
+            var actualError = Assert.Throws<IOException>(() => _service.SaveNote(newNote));
+
+            Assert.Same(expectedError, actualError);
+            Assert.True(_pathAndContent.ContainsKey(oldPath));
+            Assert.Equal(oldFileContent, _pathAndContent[oldPath]);
+            Assert.False(_pathAndContent.ContainsKey(newPath));
+
+            _mockFileSystem.Verify(fs => fs
+                .MoveFile(It.IsAny<string>(), newPath), Times.Once);
+        }
+
         //Вспомогательные методы
 
         private string NotePath(string noteTitle)
