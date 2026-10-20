@@ -218,6 +218,46 @@ namespace Tests
                 .MoveFile(It.IsAny<string>(), newPath), Times.Once);
         }
 
+        [Fact]
+        public void SaveNote_NewNote_CreatesFileAndGivesId()
+        {
+            Guid id = Guid.Empty;
+            string title = "New Note";
+            string path = NotePath(title);
+
+            var note = new Note(id, title, "Content", _defaultSavedAt, _defaultSavedAt);
+
+            _service.SaveNote(note);
+
+            Assert.NotEqual(Guid.Empty, note.Id);
+            Assert.True(_pathAndContent.ContainsKey(path));
+            Assert.Single(_pathAndContent);
+            Assert.EndsWith("Content", _pathAndContent[path]);
+        }
+
+        [Fact]
+        public void SaveNote_NewNoteSaveFails_KeepsEmptyGuid()
+        {
+            Guid id = Guid.Empty;
+            string title = "New Note";
+            string path = NotePath(title);
+
+            var note = new Note(id, title, "Content", _defaultSavedAt, _defaultSavedAt);
+
+            var expectedError = new IOException("Error saving file");
+
+            _mockFileSystem.Setup(fs => fs
+                .MoveFile(It.IsAny<string>(), It.IsAny<string>())).Throws(expectedError);
+
+            var actualError = Assert.Throws<IOException>(() => _service.SaveNote(note));
+
+            Assert.Same(expectedError, actualError);
+            Assert.Equal(Guid.Empty, note.Id);
+            Assert.Empty(_pathAndContent);
+
+            _mockFileSystem.Verify(fs => fs
+                .MoveFile(It.IsAny<string>(), path), Times.Once);
+        }
         //Вспомогательные методы
 
         private string NotePath(string noteTitle)
