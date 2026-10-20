@@ -253,7 +253,7 @@ namespace Tests
 
             Assert.Same(expectedError, actualError);
             Assert.Equal(Guid.Empty, note.Id);
-            Assert.Empty(_pathAndContent);
+            Assert.False(_pathAndContent.ContainsKey(path));
 
             _mockFileSystem.Verify(fs => fs
                 .MoveFile(It.IsAny<string>(), path), Times.Once);

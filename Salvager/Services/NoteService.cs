@@ -62,6 +62,24 @@ namespace Salvager.Services
         public NoteService() : this(new RealFileSystem(), null) { }
         public NoteService(string? customDirectory) : this(new RealFileSystem(), customDirectory) { }
 
+        private static NoteMetadata PrepareMetadata(Guid currentId, Note note)
+        {
+            var metadata = new NoteMetadata
+            {
+                Id = currentId,
+                Title = note.Title,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+            return metadata;
+        }
+
+        private string BuildFileContent(NoteMetadata metadata, Note note)
+        {
+            string frontmatter = _serializer.Serialize(metadata);
+            return $"---\n{frontmatter}---\n\n{note.Content}";
+        }
+
         private string BuildFileContent(Note note)
         {
             var metadata = new NoteMetadata
@@ -126,10 +144,17 @@ namespace Salvager.Services
             {
                 throw new ArgumentException("Title cannot be empty!", nameof(currentNote));
             }
+
+            Guid currentId;
             if (currentNote.Id == Guid.Empty)
             {
-                currentNote.Id = Guid.NewGuid();
+                currentId = Guid.NewGuid();
             }
+            else
+            {
+                currentId = currentNote.Id;
+            }
+
             currentNote.UpdatedAt = DateTime.Now;
             string? oldFilePath = FindNoteFileById(currentNote.Id);
             string sanitized = SanitizeName(currentNote.Title);
@@ -144,16 +169,19 @@ namespace Salvager.Services
                 currentNote.Title = _fileSystem.GetFileNameWithoutExtension(newFilePath);
             }
 
-            string fileContent = BuildFileContent(currentNote);
+            NoteMetadata metadata = PrepareMetadata(currentId, currentNote);
+            string fileContent = BuildFileContent(metadata, currentNote);
             _fileSystem.WriteAllText(tempFilePath, fileContent, Encoding.UTF8);
 
             if (_fileSystem.FileExists(newFilePath))
             {
                 _fileSystem.ReplaceFile(tempFilePath, newFilePath);
+                currentNote.Id = currentId;
             }
             else
             {
                 _fileSystem.MoveFile(tempFilePath, newFilePath);
+                currentNote.Id = currentId;
 
                 if (oldFilePath != null)
                 {
