@@ -12,6 +12,7 @@ namespace Tests
     public class SaveNoteSafeTests
     {
         private readonly DateTime _defaultSavedAt = new DateTime(2026, 12, 12, 12, 12, 12);
+        private readonly DateTime _defaultUpdatedAt = new DateTime(2027, 12, 12, 12, 12, 12);
         private readonly NoteService _service;
         private readonly Mock<ILogger> _logger;
         private readonly string _testRoot = Path.Combine(
@@ -257,6 +258,30 @@ namespace Tests
 
             _mockFileSystem.Verify(fs => fs
                 .MoveFile(It.IsAny<string>(), path), Times.Once);
+        }
+        [Fact]
+        public void SaveNote_WhenSavingFails_KeepsOldUpdateTime()
+        {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            DateTime updatedAt = _defaultUpdatedAt;
+            string oldTitle = "OldTitle";
+            string path = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[path] = oldFileContent;
+
+            var newNote = new Note(id, "OldTitle", "New Content", savedAt, updatedAt);
+
+            var expectedError = new IOException("Save error");
+
+            _mockFileSystem.Setup(fs => fs
+                .ReplaceFile(It.IsAny<string>(), It.IsAny<string>())).Throws(expectedError);
+
+            var actualError = Assert.Throws<IOException>(() => _service.SaveNote(newNote));
+
+            Assert.Same(expectedError, actualError);
+            Assert.Equal(newNote.UpdatedAt, _defaultSavedAt);
         }
         //Вспомогательные методы
 
