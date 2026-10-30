@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Salvager.Services
+namespace Salvager.Abstractions
 {
     public interface IFileSystem
     {

@@ -14,6 +14,7 @@ using MsBox.Avalonia.Dto;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using System.Threading.Tasks;
+using Salvager.Abstractions;
 
 namespace Salvager;
 
@@ -32,6 +33,7 @@ public partial class App : Application
         services.AddSingleton<IEditorViewModelFactory, EditorViewModelFactory>();
         services.AddSingleton<INoteService, NoteService>();
         services.AddSingleton<IFileSystem, RealFileSystem>();
+        services.AddSingleton<IClock, ClockService>();
         services.AddSingleton<IDialogueService, RealDialogueService>();
 
         var provider = services.BuildServiceProvider();

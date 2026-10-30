@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Platform;
+using Salvager.Abstractions;
 using Salvager.Models;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ namespace Salvager.Services
         private readonly string _notesDirectory;
 
         private readonly IFileSystem _fileSystem;
+
+        private readonly IClock _clock;
 
         private readonly ILogger _logger;
 
@@ -44,10 +47,11 @@ namespace Salvager.Services
             MigrateOldFiles();
         }
 
-        public NoteService(IFileSystem fileSystem, ILogger logger, string? customDirectory = null)
+        public NoteService(IFileSystem fileSystem, ILogger logger, IClock clock, string? customDirectory = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _notesDirectory = customDirectory ??
                 Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -155,7 +159,6 @@ namespace Salvager.Services
                 currentId = currentNote.Id;
             }
 
-            currentNote.UpdatedAt = DateTime.Now;
             string? oldFilePath = FindNoteFileById(currentNote.Id);
             string sanitized = SanitizeName(currentNote.Title);
             string newFileName = sanitized + ".md";
@@ -177,6 +180,7 @@ namespace Salvager.Services
             {
                 _fileSystem.ReplaceFile(tempFilePath, newFilePath);
                 currentNote.Id = currentId;
+                currentNote.UpdatedAt = _clock.GetCurrentTime();
             }
             else
             {
@@ -187,6 +191,7 @@ namespace Salvager.Services
                 {
                     _fileSystem.DeleteFile(oldFilePath);
                 }
+                currentNote.UpdatedAt = _clock.GetCurrentTime();
             }
         }
 
@@ -368,7 +373,7 @@ namespace Salvager.Services
                 using var reader = new StringReader(content);
                 string title = reader.ReadLine() ?? "Untitled";
                 string body = reader.ReadToEnd();
-                var note = new Note(Guid.NewGuid(), title, body, DateTime.Now, DateTime.Now);
+                var note = new Note(Guid.NewGuid(), title, body, _clock.GetCurrentTime(), _clock.GetCurrentTime());
                 string newContent = BuildFileContent(note);
 
                 _fileSystem.WriteAllText(filePath, newContent, Encoding.UTF8);

@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Salvager.Abstractions;
 using Salvager.Models;
 using Salvager.Services;
 using System.Text;
@@ -10,6 +11,7 @@ namespace Tests
         private readonly Mock<IFileSystem> _mockFileSystem;
 
         private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<IClock> _mockClock;
         private readonly NoteService _service;
         private readonly string _testRoot = @"C:\test\notes";
 
@@ -35,7 +37,7 @@ namespace Tests
             .GetInvalidFileNameChars())
                 .Returns(Path.GetInvalidFileNameChars());
 
-            _service = new NoteService(_mockFileSystem.Object, _mockLogger.Object, _testRoot);
+            _service = new NoteService(_mockFileSystem.Object, _mockLogger.Object, _mockClock.Object, _testRoot);
         }
 
         //!!CreateNote Tests!!

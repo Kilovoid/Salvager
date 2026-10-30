@@ -1,8 +1,10 @@
 ﻿using Moq;
+using Salvager.Abstractions;
 using Salvager.Models;
 using Salvager.Services;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -14,11 +16,12 @@ namespace Tests
         private readonly DateTime _defaultSavedAt = new DateTime(2026, 12, 12, 12, 12, 12);
         private readonly DateTime _defaultUpdatedAt = new DateTime(2027, 12, 12, 12, 12, 12);
         private readonly NoteService _service;
-        private readonly Mock<ILogger> _logger;
+        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<IClock> _mockClock;
+        private readonly Mock<IFileSystem> _mockFileSystem;
         private readonly string _testRoot = Path.Combine(
             Path.GetTempPath(), "SalvagerTests");
         private readonly Dictionary<string, string> _pathAndContent;
-        private readonly Mock<IFileSystem> _mockFileSystem;
 
         public SaveNoteSafeTests()
         {
@@ -78,9 +81,14 @@ namespace Tests
                     _pathAndContent.Remove(source);
                 });
 
-            _logger = new Mock<ILogger>();
+            _mockLogger = new Mock<ILogger>();
+            _mockClock = new Mock<IClock>();
+
+            _mockClock.Setup(cl => cl
+            .GetCurrentTime()).Returns(_defaultUpdatedAt);
+
             _service = new NoteService(
-                _mockFileSystem.Object, _logger.Object, _testRoot);
+                _mockFileSystem.Object, _mockLogger.Object, _mockClock.Object, _testRoot);
         }
         [Fact]
         public void SaveNote_WhenWriteFailsWithoutRename_KeepsOldContent()
@@ -281,7 +289,28 @@ namespace Tests
             var actualError = Assert.Throws<IOException>(() => _service.SaveNote(newNote));
 
             Assert.Same(expectedError, actualError);
-            Assert.Equal(newNote.UpdatedAt, _defaultSavedAt);
+            Assert.Equal(_defaultUpdatedAt, newNote.UpdatedAt);
+        }
+        [Fact]
+        public void SaveNote_WhenSaved_UpdatesTime()
+        {
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            DateTime updatedAt = _defaultUpdatedAt;
+            string oldTitle = "OldTitle";
+            string path = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[path] = oldFileContent;
+
+            var newNote = new Note(id, "OldTitle", "New Content", savedAt, savedAt);
+
+            _service.SaveNote(newNote);
+
+            Assert.Equal(updatedAt, newNote.UpdatedAt);
+            Assert.NotEqual(savedAt, newNote.UpdatedAt);
+            Assert.Contains(_pathAndContent[path], updatedAt.ToString());
+
         }
         //Вспомогательные методы
 
