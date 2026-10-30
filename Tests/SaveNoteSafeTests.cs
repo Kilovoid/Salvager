@@ -37,6 +37,8 @@ namespace Tests
                     .Where(path => Path.GetExtension(path) == ".md")
                     .ToArray()); // не возвращает tmp например
             _mockFileSystem.Setup(fs => fs
+            .GetFileNameWithoutExtension(It.IsAny<string>())).Returns<string>(path => Path.GetFileNameWithoutExtension(path));
+            _mockFileSystem.Setup(fs => fs
                 .DirectoryExists(It.IsAny<string>())).Returns(true);
             _mockFileSystem.Setup(fs => fs
                 .CombinePath(It.IsAny<string>(), It.IsAny<string>())).Returns<string, string>(
@@ -320,6 +322,35 @@ namespace Tests
 
             Assert.Equal(_defaultUpdatedAt, metadata.UpdatedAt);
 
+        }
+
+        [Fact]
+        public void SaveNote_SameName_AddsSuffix()
+        {
+            Note sameNote = new Note(Guid.NewGuid(), "SameName", "Content", _defaultSavedAt, _defaultSavedAt);
+            string samePath = NotePath(sameNote.Title);
+            string sameNoteContent = BuildNoteContent(sameNote.Id, sameNote.Title, sameNote.Content);
+
+            _pathAndContent[samePath] = sameNoteContent;
+
+            Guid id = Guid.NewGuid();
+            DateTime savedAt = _defaultSavedAt;
+            DateTime updatedAt = _defaultUpdatedAt;
+            string oldTitle = "OldTitle";
+            string path = NotePath(oldTitle);
+            string oldFileContent = BuildNoteContent(id, oldTitle, "Test Content");
+
+            _pathAndContent[path] = oldFileContent;
+
+            var newNote = new Note(id, "SameName", "New Content", savedAt, savedAt);
+
+            _service.SaveNote(newNote);
+
+            Assert.Equal("SameName (1)", newNote.Title);
+            Assert.True(_pathAndContent.ContainsKey(NotePath("SameName (1)")));
+            Assert.Equal(sameNoteContent, _pathAndContent[NotePath("SameName")]);
+            Assert.False(_pathAndContent.ContainsKey(path));
+            Assert.Equal(2, _pathAndContent.Count);
         }
         //Вспомогательные методы
 
