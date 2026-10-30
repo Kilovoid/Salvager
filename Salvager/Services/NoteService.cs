@@ -172,27 +172,28 @@ namespace Salvager.Services
                 currentNote.Title = _fileSystem.GetFileNameWithoutExtension(newFilePath);
             }
 
+            DateTime updatedAt = _clock.GetCurrentTime();
             NoteMetadata metadata = PrepareMetadata(currentId, currentNote);
+            metadata.UpdatedAt = updatedAt;
+
             string fileContent = BuildFileContent(metadata, currentNote);
             _fileSystem.WriteAllText(tempFilePath, fileContent, Encoding.UTF8);
 
             if (_fileSystem.FileExists(newFilePath))
             {
                 _fileSystem.ReplaceFile(tempFilePath, newFilePath);
-                currentNote.Id = currentId;
-                currentNote.UpdatedAt = _clock.GetCurrentTime();
             }
             else
             {
                 _fileSystem.MoveFile(tempFilePath, newFilePath);
-                currentNote.Id = currentId;
 
                 if (oldFilePath != null)
                 {
                     _fileSystem.DeleteFile(oldFilePath);
                 }
-                currentNote.UpdatedAt = _clock.GetCurrentTime();
             }
+            currentNote.Id = currentId;
+            currentNote.UpdatedAt = updatedAt;
         }
 
         public void DeleteNote(Guid noteId)

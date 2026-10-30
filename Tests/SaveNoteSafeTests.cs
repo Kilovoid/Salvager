@@ -309,7 +309,16 @@ namespace Tests
 
             Assert.Equal(updatedAt, newNote.UpdatedAt);
             Assert.NotEqual(savedAt, newNote.UpdatedAt);
-            Assert.Contains(_pathAndContent[path], updatedAt.ToString());
+
+            string savedContent = _pathAndContent[path];
+            string yaml = savedContent.Split(new[] { "---" },
+                StringSplitOptions.None)[1];
+            var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+
+            NoteMetadata metadata = deserializer.Deserialize<NoteMetadata>(yaml);
+
+            Assert.Equal(_defaultUpdatedAt, metadata.UpdatedAt);
 
         }
         //Вспомогательные методы
