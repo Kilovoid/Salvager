@@ -33,19 +33,11 @@ namespace Salvager.Services
             .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
             .Build();
 
-        public NoteService(IFileSystem fileSystem, string? customDirectory = null)
-        {
-            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-            _notesDirectory = customDirectory ??
-                Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Salvager",
-                "Notes"
-                );
-            if (!_fileSystem.DirectoryExists(_notesDirectory))
-                _fileSystem.CreateDirectory(_notesDirectory);
-            MigrateOldFiles();
-        }
+        public NoteService(IFileSystem fileSystem, string? customDirectory = null): this(
+            fileSystem,
+            new RealLogger(),
+            new ClockService(),
+            customDirectory) { }
 
         public NoteService(IFileSystem fileSystem, ILogger logger, IClock clock, string? customDirectory = null)
         {
