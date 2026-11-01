@@ -352,6 +352,26 @@ namespace Tests
             Assert.False(_pathAndContent.ContainsKey(path));
             Assert.Equal(2, _pathAndContent.Count);
         }
+
+        [Fact]
+        public void SaveNote_DoesNotDuplicate()
+        {
+            Guid id = Guid.NewGuid();
+            string title = "TestTitle";
+            string path = NotePath(title);
+
+            var note = new Note(id, title, "TestContent", _defaultSavedAt, _defaultSavedAt);
+
+            _service.SaveNote(note);
+
+            note.Content = "Update";
+            _service.SaveNote(note);
+
+            Assert.Single(_pathAndContent);
+            Assert.True(_pathAndContent.ContainsKey(path));
+            Assert.EndsWith("Update", _pathAndContent[path]);
+            Assert.Equal(id, note.Id);
+        }
         //Вспомогательные методы
 
         private string NotePath(string noteTitle)
