@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Salvager.Services
+namespace Salvager.Abstractions
 {
     public interface IFileSystem
     {
@@ -16,5 +16,7 @@ namespace Salvager.Services
         string CombinePath(string path1, string path2);
         string GetFileNameWithoutExtension(string path);
         char[] GetInvalidFileNameChars();
+        void ReplaceFile(string source, string destination);
+        void MoveFile(string source, string destination);
     }
 }

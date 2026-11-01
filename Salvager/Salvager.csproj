@@ -36,7 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include=".editorconfig" 
-		  Condition="Exists('.editorconfig')" />
+    <None Include=".editorconfig" Condition="Exists('.editorconfig')" />
   </ItemGroup>
 </Project>

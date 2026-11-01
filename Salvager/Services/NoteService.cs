@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Platform;
+using Salvager.Abstractions;
 using Salvager.Models;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ namespace Salvager.Services
         private readonly string _notesDirectory;
 
         private readonly IFileSystem _fileSystem;
+
+        private readonly IClock _clock;
 
         private readonly ILogger _logger;
 
@@ -44,10 +47,11 @@ namespace Salvager.Services
             MigrateOldFiles();
         }
 
-        public NoteService(IFileSystem fileSystem, ILogger logger, string? customDirectory = null)
+        public NoteService(IFileSystem fileSystem, ILogger logger, IClock clock, string? customDirectory = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _notesDirectory = customDirectory ??
                 Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -61,6 +65,24 @@ namespace Salvager.Services
 
         public NoteService() : this(new RealFileSystem(), null) { }
         public NoteService(string? customDirectory) : this(new RealFileSystem(), customDirectory) { }
+
+        private static NoteMetadata PrepareMetadata(Guid currentId, Note note)
+        {
+            var metadata = new NoteMetadata
+            {
+                Id = currentId,
+                Title = note.Title,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+            return metadata;
+        }
+
+        private string BuildFileContent(NoteMetadata metadata, Note note)
+        {
+            string frontmatter = _serializer.Serialize(metadata);
+            return $"---\n{frontmatter}---\n\n{note.Content}";
+        }
 
         private string BuildFileContent(Note note)
         {
@@ -126,20 +148,22 @@ namespace Salvager.Services
             {
                 throw new ArgumentException("Title cannot be empty!", nameof(currentNote));
             }
+
+            Guid currentId;
             if (currentNote.Id == Guid.Empty)
             {
-                currentNote.Id = Guid.NewGuid();
+                currentId = Guid.NewGuid();
             }
-            currentNote.UpdatedAt = DateTime.Now;
+            else
+            {
+                currentId = currentNote.Id;
+            }
+
             string? oldFilePath = FindNoteFileById(currentNote.Id);
             string sanitized = SanitizeName(currentNote.Title);
             string newFileName = sanitized + ".md";
             string newFilePath = _fileSystem.CombinePath(_notesDirectory, newFileName);
-
-            if (oldFilePath != null && oldFilePath != newFilePath)
-            {
-                _fileSystem.DeleteFile(oldFilePath);
-            }
+            string tempFilePath = _fileSystem.CombinePath(_notesDirectory, $"{Guid.NewGuid()}.tmp");
 
             if (_fileSystem.FileExists(newFilePath) && oldFilePath != newFilePath)
             {
@@ -148,8 +172,28 @@ namespace Salvager.Services
                 currentNote.Title = _fileSystem.GetFileNameWithoutExtension(newFilePath);
             }
 
-            string fileContent = BuildFileContent(currentNote);
-            _fileSystem.WriteAllText(newFilePath, fileContent, Encoding.UTF8);
+            DateTime updatedAt = _clock.GetCurrentTime();
+            NoteMetadata metadata = PrepareMetadata(currentId, currentNote);
+            metadata.UpdatedAt = updatedAt;
+
+            string fileContent = BuildFileContent(metadata, currentNote);
+            _fileSystem.WriteAllText(tempFilePath, fileContent, Encoding.UTF8);
+
+            if (_fileSystem.FileExists(newFilePath))
+            {
+                _fileSystem.ReplaceFile(tempFilePath, newFilePath);
+            }
+            else
+            {
+                _fileSystem.MoveFile(tempFilePath, newFilePath);
+
+                if (oldFilePath != null)
+                {
+                    _fileSystem.DeleteFile(oldFilePath);
+                }
+            }
+            currentNote.Id = currentId;
+            currentNote.UpdatedAt = updatedAt;
         }
 
         public void DeleteNote(Guid noteId)
@@ -330,7 +374,7 @@ namespace Salvager.Services
                 using var reader = new StringReader(content);
                 string title = reader.ReadLine() ?? "Untitled";
                 string body = reader.ReadToEnd();
-                var note = new Note(Guid.NewGuid(), title, body, DateTime.Now, DateTime.Now);
+                var note = new Note(Guid.NewGuid(), title, body, _clock.GetCurrentTime(), _clock.GetCurrentTime());
                 string newContent = BuildFileContent(note);
 
                 _fileSystem.WriteAllText(filePath, newContent, Encoding.UTF8);
