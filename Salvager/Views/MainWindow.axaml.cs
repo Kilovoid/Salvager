@@ -29,6 +29,14 @@ public partial class MainWindow : Window
     {
         this.WindowState = WindowState.Minimized;
     }
+    private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+            e.Handled = true;
+        }
+    }
     private void MaximizeButton_Click(object sender, RoutedEventArgs e)
     {
         if (WindowState != WindowState.FullScreen)

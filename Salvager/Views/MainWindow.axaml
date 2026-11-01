@@ -45,7 +45,9 @@
                     <Button Content="_" Click="MinimizeButton_Click"/>
                     <Button Content="☐" Click="MaximizeButton_Click"/>
                     <Button Content="✕" Click="CloseButton_Click"/>
-                </StackPanel>  
+                </StackPanel>
+                <Border Background="Transparent"
+                        PointerPressed="TitleBar_PointerPressed"/>
             </DockPanel>
         </Border>
         <DockPanel Grid.Row="1">
