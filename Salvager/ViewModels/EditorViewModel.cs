@@ -18,11 +18,11 @@ namespace Salvager.ViewModels
         public EditorViewModel(Note page)
         {
             CurrentPage = page;
-            InitializeSnapshot();
-            if (CurrentPage != null)
-            {
-                CurrentPage.PropertyChanged += OnNotePropertyChanged;
-            }
+            //InitializeSnapshot();
+            //if (CurrentPage != null)
+            //{
+            //    CurrentPage.PropertyChanged += OnNotePropertyChanged;
+            //}
         }
 
         private void InitializeSnapshot()
