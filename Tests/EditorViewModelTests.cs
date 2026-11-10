@@ -167,5 +167,37 @@ namespace Tests
             Assert.Same(_viewModel.SelectedNoteViewModel, editor1);
             Assert.True(note1.IsDirty);
         }
+
+        [Fact]
+        public void CreateNote_RemembersEditorAndUnsavedChanges()
+        {
+            _mockEditorViewModelFactory.Setup(fc => fc
+            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
+
+            var note = new Note("Other note", "other content");
+
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+
+            _viewModel.CreateNewNoteCommand.Execute(null);
+
+            var createdNote = _viewModel.SelectedNote;
+            var createdEditor = _viewModel.SelectedNoteViewModel;
+
+            Assert.NotNull(createdNote);
+            Assert.NotNull(createdEditor);
+            Assert.NotSame(note, createdNote);
+            Assert.Same(createdNote, createdEditor.CurrentPage);
+
+            createdNote.Content = "New content";
+            Assert.True(createdNote.IsDirty);
+
+            _viewModel.SelectedNote = note;
+            _viewModel.SelectedNote = createdNote;
+
+            Assert.Same(createdEditor, _viewModel.SelectedNoteViewModel);
+            Assert.True(createdNote.IsDirty);
+            Assert.Equal("New content", createdNote.Content);
+        }
     }
 }

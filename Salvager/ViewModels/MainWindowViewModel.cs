@@ -50,6 +50,7 @@ namespace Salvager.ViewModels
         private void LoadNotesFromDisk()
         {
             var loadedNotes = _noteService.LoadAll();
+            _correspondingEditors.Clear();
             Notes.Clear();
             foreach (var note in loadedNotes)
             {
@@ -57,7 +58,6 @@ namespace Salvager.ViewModels
             
             }
             SelectedNote = Notes.FirstOrDefault();
-            SelectedNoteViewModel = SelectedNote != null ? _editorFactory.Create(SelectedNote) : null;
         }
 
         [RelayCommand]
@@ -76,7 +76,6 @@ namespace Salvager.ViewModels
             Notes.Add(note);
             _noteService.SaveNote(note);
             SelectedNote = note;
-            SelectedNoteViewModel = _editorFactory.Create(note);
         }
         [RelayCommand]
         private async Task SaveNote()
@@ -113,6 +112,8 @@ namespace Salvager.ViewModels
         private async Task DeleteNote()
         {
             if (SelectedNote == null) return;
+            var noteToRemove = SelectedNote;
+
             ButtonResult result = await _dialogueService.ShowWarningAsync("Warning",
                 "Are you sure you want to delete this note?",
                 ButtonEnum.OkCancel);
@@ -123,12 +124,11 @@ namespace Salvager.ViewModels
             }
             try
             {
-                _noteService.DeleteNote(SelectedNote.Id);
-                Notes.Remove(SelectedNote);
+                _noteService.DeleteNote(noteToRemove.Id);
+                Notes.Remove(noteToRemove);
+                _correspondingEditors.Remove(noteToRemove);
+
                 SelectedNote = Notes.FirstOrDefault();
-                SelectedNoteViewModel = SelectedNote != null
-                    ? _editorFactory.Create(SelectedNote)
-                    : null;
             }
             catch (ArgumentNullException ex)
             {
@@ -182,7 +182,7 @@ namespace Salvager.ViewModels
                 if (!(_correspondingEditors.ContainsKey(value)))
                 {
                     SelectedNoteViewModel = _editorFactory.Create(value);
-                    var editor = SelectedNoteViewModel; //Запомнить на всякий случай, если вдруг запись не произойдет из Selected
+                    var editor = SelectedNoteViewModel; //Запомнить на всякий случай
                     _correspondingEditors.Add(value, editor);
                 }
                 else

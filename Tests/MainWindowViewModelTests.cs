@@ -281,5 +281,76 @@ namespace Tests
             _mockService.Verify(s => s
             .SaveNote(It.IsAny<Note>()), Times.Never);
         }
+
+        [Fact]
+        public void LoadedNote_SwitchingBack_KeepsEditorAndUnsavedChanges()
+        {
+            var note1 = new Note("Title1", "Content1");
+            var note2 = new Note("Title2", "Content2");
+
+            _mockService
+                .Setup(service => service.LoadAll())
+                .Returns(new List<Note> { note1, note2 });
+
+            _mockEditorFactory
+                .Setup(factory => factory.Create(It.IsAny<Note>()))
+                .Returns<Note>(note => new EditorViewModel(note));
+
+            var viewModel = new MainWindowViewModel(
+                _mockService.Object,
+                _mockDialogueService.Object,
+                _mockEditorFactory.Object);
+
+            var originalEditor = viewModel.SelectedNoteViewModel;
+
+            Assert.Same(note1, viewModel.SelectedNote);
+            Assert.NotNull(originalEditor);
+
+            note1.Content = "Unsaved content";
+
+            viewModel.SelectedNote = note2;
+            viewModel.SelectedNote = note1;
+
+            Assert.Same(originalEditor, viewModel.SelectedNoteViewModel);
+            Assert.Equal("Unsaved content", note1.Content);
+            Assert.True(note1.IsDirty);
+        }
+
+        [Fact]
+        public async Task DeleteNote_KeepsRemainingEditorAndUnsavedChanges()
+        {
+            var note1 = new Note("Title1", "Content1");
+            var note2 = new Note("Title2", "Content2");
+
+            _mockEditorFactory
+                .Setup(factory => factory.Create(It.IsAny<Note>()))
+                .Returns<Note>(note => new EditorViewModel(note));
+
+            _viewModel.Notes.Add(note1);
+            _viewModel.Notes.Add(note2);
+
+            _viewModel.SelectedNote = note1;
+            var originalEditor = _viewModel.SelectedNoteViewModel;
+
+            Assert.NotNull(originalEditor);
+
+            note1.Content = "Unsaved content";
+            _viewModel.SelectedNote = note2;
+
+            _mockDialogueService
+                .Setup(dialogue => dialogue.ShowWarningAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    ButtonEnum.OkCancel))
+                .ReturnsAsync(ButtonResult.Ok);
+
+            await _viewModel.DeleteNoteCommand.ExecuteAsync(null);
+
+            Assert.Single(_viewModel.Notes);
+            Assert.Same(note1, _viewModel.SelectedNote);
+            Assert.Same(originalEditor, _viewModel.SelectedNoteViewModel);
+            Assert.Equal("Unsaved content", note1.Content);
+            Assert.True(note1.IsDirty);
+        }
     }
 }
