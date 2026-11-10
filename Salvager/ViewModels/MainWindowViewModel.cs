@@ -23,6 +23,7 @@ namespace Salvager.ViewModels
         private readonly INoteService _noteService;
         private readonly IDialogueService _dialogueService;
         private readonly IEditorViewModelFactory _editorFactory;
+        private readonly Dictionary<Note, IEditorViewModel> _correspondingEditors;
 
         [ObservableProperty]
         private ObservableCollection<Note> _notes = new();
@@ -39,6 +40,7 @@ namespace Salvager.ViewModels
         public MainWindowViewModel(INoteService noteService, IDialogueService dialogueService,
             IEditorViewModelFactory editorFactory)
         {
+            _correspondingEditors = new Dictionary<Note, IEditorViewModel>();
             _noteService = noteService;
             _dialogueService = dialogueService;
             _editorFactory = editorFactory;
@@ -171,9 +173,23 @@ namespace Salvager.ViewModels
 
         partial void OnSelectedNoteChanged(Note value)
         {
+            if (value == null)
+            {
+                SelectedNoteViewModel = null;
+            }
             if (value != null)
             {
-                SelectedNoteViewModel = _editorFactory.Create(value);
+                if (!(_correspondingEditors.ContainsKey(value)))
+                {
+                    SelectedNoteViewModel = _editorFactory.Create(value);
+                    var editor = SelectedNoteViewModel; //Запомнить на всякий случай, если вдруг запись не произойдет из Selected
+                    _correspondingEditors.Add(value, editor);
+                }
+                else
+                {
+                    SelectedNoteViewModel = _correspondingEditors[value];
+                }
+
             }
         }
     }
