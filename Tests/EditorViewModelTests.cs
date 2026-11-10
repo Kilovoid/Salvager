@@ -16,14 +16,23 @@ namespace Tests
         private readonly Mock<IDialogueService> _mockDialogueService;
         private readonly Mock<IEditorViewModelFactory> _mockEditorViewModelFactory;
         private readonly Mock<IEditorViewModel> _mockEditor;
-
-
+        private readonly MainWindowViewModel _viewModel;
         public EditorViewModelTests()
         {
             _mockService = new Mock<INoteService>();
             _mockDialogueService = new Mock<IDialogueService>();
             _mockEditorViewModelFactory = new Mock<IEditorViewModelFactory>();
             _mockEditor = new Mock<IEditorViewModel>();
+
+            _mockService.Setup(s => s.
+            LoadAll()).Returns(new List<Note>());
+
+            _mockEditorViewModelFactory.Setup(fc => fc
+            .Create(It.IsAny<Note>())).Returns(_mockEditor.Object);
+
+            _viewModel = new MainWindowViewModel(_mockService.Object,
+                _mockDialogueService.Object,
+                _mockEditorViewModelFactory.Object);
         }
 
         [Fact]
@@ -126,6 +135,69 @@ namespace Tests
             .SaveNote(It.IsAny<Note>()), Times.Once);
             _mockEditor.Verify(ed => ed
             .ResetSnapshot(), Times.Once);
+        }
+
+        [Fact]
+        public void SwitchingNotes_KeepsUnsavedChanges()
+        {
+            var note1 = new Note("Title1", "Content1");
+            var note2 = new Note("Title2", "Content2");
+
+            _mockEditorViewModelFactory.Setup(fc => fc
+            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
+
+            _viewModel.Notes.Add(note1);
+            _viewModel.Notes.Add(note2);
+
+            _viewModel.SelectedNote = note1;
+            var editor1 = _viewModel.SelectedNoteViewModel;
+
+            Assert.NotNull(editor1);
+
+            note1.Content = "New Content";
+            Assert.True(note1.IsDirty);
+
+            _viewModel.SelectedNote = note2;
+            var editor2 = _viewModel.SelectedNoteViewModel;
+            Assert.NotNull(editor2);
+            Assert.True(note1.IsDirty);
+
+            _viewModel.SelectedNote = note1;
+            Assert.Equal("New Content", note1.Content);
+            Assert.Same(_viewModel.SelectedNoteViewModel, editor1);
+            Assert.True(note1.IsDirty);
+        }
+
+        [Fact]
+        public void CreateNote_RemembersEditorAndUnsavedChanges()
+        {
+            _mockEditorViewModelFactory.Setup(fc => fc
+            .Create(It.IsAny<Note>())).Returns<Note>(note => new EditorViewModel(note));
+
+            var note = new Note("Other note", "other content");
+
+            _viewModel.Notes.Add(note);
+            _viewModel.SelectedNote = note;
+
+            _viewModel.CreateNewNoteCommand.Execute(null);
+
+            var createdNote = _viewModel.SelectedNote;
+            var createdEditor = _viewModel.SelectedNoteViewModel;
+
+            Assert.NotNull(createdNote);
+            Assert.NotNull(createdEditor);
+            Assert.NotSame(note, createdNote);
+            Assert.Same(createdNote, createdEditor.CurrentPage);
+
+            createdNote.Content = "New content";
+            Assert.True(createdNote.IsDirty);
+
+            _viewModel.SelectedNote = note;
+            _viewModel.SelectedNote = createdNote;
+
+            Assert.Same(createdEditor, _viewModel.SelectedNoteViewModel);
+            Assert.True(createdNote.IsDirty);
+            Assert.Equal("New content", createdNote.Content);
         }
     }
 }
