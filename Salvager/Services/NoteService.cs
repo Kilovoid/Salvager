@@ -70,42 +70,6 @@ namespace Salvager.Services
             return metadata;
         }
 
-        private string BuildFileContent(NoteMetadata metadata, Note note)
-        {
-            string frontmatter = _serializer.Serialize(metadata);
-            return $"---\n{frontmatter}---\n\n{note.Content}";
-        }
-
-        private string BuildFileContent(Note note)
-        {
-            var metadata = new NoteMetadata
-            {
-                Id = note.Id,
-                Title = note.Title,
-                CreatedAt = note.CreatedAt,
-                UpdatedAt = note.UpdatedAt
-            };
-            string frontmatter = _serializer.Serialize(metadata);
-            return $"---\n{frontmatter}---\n\n{note.Content}";
-        }
-        private (Note, string contentBody) ParseFileContent(string fileContent)
-        {
-            int start = fileContent.IndexOf("---");
-            if (start == -1) throw new InvalidDataException("No frontmatter found");
-
-            int end = fileContent.IndexOf("---", start + 3);
-            if (end == -1) throw new InvalidDataException("Unclosed frontmatter");
-
-            string yaml = fileContent.Substring(start + 3, end - start - 3).Trim();
-            string body = fileContent.Substring(end + 3).TrimStart('\n');
-
-            var metadata = _deserializer.Deserialize<NoteMetadata>(yaml);
-            var note = new Note(metadata.Id,
-                metadata.Title, body, metadata.CreatedAt, metadata.UpdatedAt);
-
-            return (note, body);
-        }
-
         public Note CreateNote(string title)
         {
 
@@ -351,6 +315,65 @@ namespace Salvager.Services
                 return note;
             }
             catch { return null; }
+        }
+
+        //вспомогательные методы
+
+        private string BuildFileContent(NoteMetadata metadata, Note note)
+        {
+            string frontmatter = _serializer.Serialize(metadata);
+            return $"---\n{frontmatter}---\n\n{note.Content}";
+        }
+
+        private string BuildFileContent(Note note)
+        {
+            var metadata = new NoteMetadata
+            {
+                Id = note.Id,
+                Title = note.Title,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+            string frontmatter = _serializer.Serialize(metadata);
+            return $"---\n{frontmatter}---\n\n{note.Content}";
+        }
+
+        private (Note, string contentBody) ParseFileContent(string fileContent)
+        {
+            //Надо проверить, что первая строка = ---, далее искать строку отдельную, состоящую только из ---
+            string yamlDivider = "---";
+            string? firstLine;
+            bool dividerFound = false;
+            using StringReader reader = new StringReader(fileContent);
+            firstLine = reader.ReadLine();
+
+            if (!string.Equals(yamlDivider, firstLine)) throw new InvalidDataException("No frontmatter found");
+
+            StringBuilder yamlBuilder = new StringBuilder();
+            while(reader.Peek() != -1 && !dividerFound)
+            {
+                string endCandidate = reader.ReadLine();
+                if (string.Equals("---", endCandidate))
+                {
+                    dividerFound = true;
+                }
+                else
+                {
+                    yamlBuilder.AppendLine(endCandidate);
+                }
+            }
+
+            if (!dividerFound) throw new InvalidDataException("Unclosed frontmatter");
+
+            string yaml = yamlBuilder.ToString();
+            reader.ReadLine();
+            string body = reader.ReadToEnd();
+
+            var metadata = _deserializer.Deserialize<NoteMetadata>(yaml);
+            var note = new Note(metadata.Id,
+                metadata.Title, body, metadata.CreatedAt, metadata.UpdatedAt);
+
+            return (note, body);
         }
 
         private void MigrateOldFiles()

@@ -372,6 +372,27 @@ namespace Tests
             Assert.EndsWith("Update", _pathAndContent[path]);
             Assert.Equal(id, note.Id);
         }
+
+        [Fact]
+        public void TitleContainsThreeDashes_YamlDetectionWorks()
+        {
+            string title = "this---test";
+            string content = "content";
+            //GUID нет потому что проверяем работу вместе с сохранением
+            var note = new Note(title, content);
+
+            _service.SaveNote(note);
+
+            Assert.Equal("this---test", note.Title); //работает
+            Assert.NotEqual(Guid.Empty, note.Id);
+            Guid noteId = note.Id;
+
+            var loadedNote = _service.LoadNote(note.Id);
+
+            Assert.Equal("this---test", loadedNote.Title);
+            Assert.Equal("content", loadedNote.Content);
+            Assert.Equal(noteId, loadedNote.Id);
+        }
         //Вспомогательные методы
 
         private string NotePath(string noteTitle)
