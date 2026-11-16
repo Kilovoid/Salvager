@@ -393,6 +393,8 @@ namespace Tests
             Assert.Equal("content", loadedNote.Content);
             Assert.Equal(noteId, loadedNote.Id);
         }
+
+        
         //Вспомогательные методы
 
         private string NotePath(string noteTitle)

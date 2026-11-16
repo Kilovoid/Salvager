@@ -366,8 +366,16 @@ namespace Salvager.Services
             if (!dividerFound) throw new InvalidDataException("Unclosed frontmatter");
 
             string yaml = yamlBuilder.ToString();
-            reader.ReadLine();
             string body = reader.ReadToEnd();
+
+            int newLineIndex = body.IndexOf("\n");
+
+            string beforeNewLine = body.Substring(0, newLineIndex);
+
+            if (string.IsNullOrWhiteSpace(beforeNewLine))
+            {
+                body = body.Substring(newLineIndex + 1);
+            }
 
             var metadata = _deserializer.Deserialize<NoteMetadata>(yaml);
             var note = new Note(metadata.Id,
