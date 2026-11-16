@@ -369,12 +369,15 @@ namespace Salvager.Services
             string body = reader.ReadToEnd();
 
             int newLineIndex = body.IndexOf("\n");
-
-            string beforeNewLine = body.Substring(0, newLineIndex);
-
-            if (string.IsNullOrWhiteSpace(beforeNewLine))
+            string beforeNewLine;
+            if (newLineIndex != -1)
             {
-                body = body.Substring(newLineIndex + 1);
+                beforeNewLine = body.Substring(0, newLineIndex);
+
+                if (string.IsNullOrWhiteSpace(beforeNewLine))
+                {
+                    body = body.Substring(newLineIndex + 1);
+                }
             }
 
             var metadata = _deserializer.Deserialize<NoteMetadata>(yaml);
